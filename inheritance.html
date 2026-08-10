@@ -7,14 +7,17 @@
 <meta name="description" content="배우자 유무와 상속재산가액을 입력하면 일괄공제 5억원, 배우자상속공제(5억~30억)를 반영한 상속세 예상 세액을 계산합니다.">
 <link rel="canonical" href="https://taxajin.com/inheritance.html">
 <link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="img/icon-square.png">
+<link rel="apple-touch-icon" href="img/icon-square.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1D77B5">
 </head>
 <body>
 
 <header class="site">
   <div class="site-bar">
     <a class="brand" href="index.html">
-      <span class="seal-mark">阿進</span>
-      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img">
     </a>
     <nav class="tabs">
       <a href="transfer.html">양도소득세</a>
@@ -22,8 +25,6 @@
       <a href="gift.html">증여세</a>
       <a href="inheritance.html" class="active">상속세</a>
       <a href="holding-tax.html">보유세</a>
-      <a href="inheritance-share.html">상속지분</a>
-      <a href="registration-cost.html">등기비용</a>
     </nav>
   </div>
 </header>
@@ -39,7 +40,7 @@
     <div class="field-grid">
       <div class="field">
         <label>상속재산가액 (채무·장례비 차감 후, 원)</label>
-        <input type="number" id="i-totalEstate" placeholder="예: 1500000000" required>
+        <input type="text" inputmode="numeric" id="i-totalEstate" placeholder="예: 1,500,000,000" required>
       </div>
       <div class="field">
         <label>배우자가 생존해 있나요?</label>
@@ -50,7 +51,7 @@
       </div>
       <div class="field full">
         <label>배우자의 실제 상속분 (원)</label>
-        <input type="number" id="i-spouseShare" value="0">
+        <input type="text" inputmode="numeric" id="i-spouseShare" value="0">
         <span class="hint">배우자상속공제는 최소 5억원, 최대 30억원 한도로 실제 상속받은 금액 기준 적용 (§19)</span>
       </div>
     </div>
@@ -95,12 +96,13 @@
 
 <script src="calc.js"></script>
 <script>
+attachThousandsAll('#i-totalEstate, #i-spouseShare');
 document.getElementById('form-inherit').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
-    totalEstate: Number(document.getElementById('i-totalEstate').value || 0),
+    totalEstate: rawNumber(document.getElementById('i-totalEstate')),
     hasSpouse: document.querySelector('input[name=hasSpouse]:checked').value === '1',
-    spouseShare: Number(document.getElementById('i-spouseShare').value || 0),
+    spouseShare: rawNumber(document.getElementById('i-spouseShare')),
   };
   const r = calcInheritanceTax(p);
   document.getElementById('i-total').textContent = won(r.total);

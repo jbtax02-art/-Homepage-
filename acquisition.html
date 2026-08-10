@@ -7,14 +7,17 @@
 <meta name="description" content="매매·증여·상속 취득 원인과 조정대상지역, 보유주택수를 반영해 취득세·지방교육세·농어촌특별세를 계산합니다.">
 <link rel="canonical" href="https://taxajin.com/acquisition.html">
 <link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="img/icon-square.png">
+<link rel="apple-touch-icon" href="img/icon-square.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1D77B5">
 </head>
 <body>
 
 <header class="site">
   <div class="site-bar">
     <a class="brand" href="index.html">
-      <span class="seal-mark">阿進</span>
-      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img">
     </a>
     <nav class="tabs">
       <a href="transfer.html">양도소득세</a>
@@ -22,8 +25,6 @@
       <a href="gift.html">증여세</a>
       <a href="inheritance.html">상속세</a>
       <a href="holding-tax.html">보유세</a>
-      <a href="inheritance-share.html">상속지분</a>
-      <a href="registration-cost.html">등기비용</a>
     </nav>
   </div>
 </header>
@@ -47,7 +48,7 @@
       </div>
       <div class="field">
         <label>취득가액 (또는 시가인정액, 원)</label>
-        <input type="number" id="a-price" placeholder="예: 600000000" required>
+        <input type="text" inputmode="numeric" id="a-price" placeholder="예: 600,000,000" required>
       </div>
       <div class="field">
         <label>취득 후 보유주택 수 (세대 기준)</label>
@@ -109,11 +110,12 @@
 
 <script src="calc.js"></script>
 <script>
+attachThousandsAll('#a-price');
 document.getElementById('form-acq').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
     acquireType: document.querySelector('input[name=acquireType]:checked').value,
-    price: Number(document.getElementById('a-price').value || 0),
+    price: rawNumber(document.getElementById('a-price')),
     houseCount: Number(document.getElementById('a-houseCount').value || 1),
     exceedsArea85: document.querySelector('input[name=exceedsArea85]:checked').value === '1',
     isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',

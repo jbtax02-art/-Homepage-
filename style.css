@@ -60,15 +60,7 @@ header.site{
   padding:14px 24px; max-width:920px; margin:0 auto;
 }
 .brand{display:flex; align-items:center; gap:10px; text-decoration:none;}
-.seal-mark{
-  width:34px; height:34px; border-radius:50%;
-  border:2px solid var(--stamp); color:var(--stamp);
-  display:flex; align-items:center; justify-content:center;
-  font-family:'Noto Serif KR',serif; font-weight:900; font-size:14px;
-  transform:rotate(-6deg); flex-shrink:0; background:var(--white);
-}
-.brand-name{font-family:'Noto Serif KR',serif; font-weight:700; font-size:17px; color:var(--brand-deep);}
-.brand-sub{display:block; font-size:11px; color:var(--muted); font-weight:400; letter-spacing:.02em;}
+.logo-img{height:34px; width:auto; display:block;}
 
 nav.tabs{display:flex; gap:2px;}
 nav.tabs a{

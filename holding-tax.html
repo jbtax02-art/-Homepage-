@@ -7,14 +7,17 @@
 <meta name="description" content="공시가격과 보유주택 수를 입력하면 재산세(지방세법 §111)와 종합부동산세(종부세법 §8·9)를 함께 계산합니다.">
 <link rel="canonical" href="https://taxajin.com/holding-tax.html">
 <link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="img/icon-square.png">
+<link rel="apple-touch-icon" href="img/icon-square.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1D77B5">
 </head>
 <body>
 
 <header class="site">
   <div class="site-bar">
     <a class="brand" href="index.html">
-      <span class="seal-mark">阿進</span>
-      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img">
     </a>
     <nav class="tabs">
       <a href="transfer.html">양도소득세</a>
@@ -22,8 +25,6 @@
       <a href="gift.html">증여세</a>
       <a href="inheritance.html">상속세</a>
       <a href="holding-tax.html" class="active">보유세</a>
-      <a href="inheritance-share.html">상속지분</a>
-      <a href="registration-cost.html">등기비용</a>
     </nav>
   </div>
 </header>
@@ -39,7 +40,7 @@
     <div class="field-grid">
       <div class="field">
         <label>주택 공시가격 (합산, 원)</label>
-        <input type="number" id="h-publicPrice" placeholder="예: 1500000000" required>
+        <input type="text" inputmode="numeric" id="h-publicPrice" placeholder="예: 1,500,000,000" required>
         <span class="hint">국토교통부 부동산공시가격알리미(realtyprice.kr)에서 확인 가능</span>
       </div>
       <div class="field">
@@ -88,7 +89,7 @@
   <div class="related">
     <a href="acquisition.html">→ 취득세 계산기</a>
     <a href="transfer.html">→ 양도소득세 계산기</a>
-    <a href="registration-cost.html">→ 등기비용 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
   </div>
 </main>
 
@@ -104,10 +105,11 @@
 
 <script src="calc.js"></script>
 <script>
+attachThousandsAll('#h-publicPrice');
 document.getElementById('form-holding').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
-    publicPrice: Number(document.getElementById('h-publicPrice').value || 0),
+    publicPrice: rawNumber(document.getElementById('h-publicPrice')),
     houseCount: Number(document.getElementById('h-houseCount').value || 1),
     isOneHouse: document.querySelector('input[name=isOneHouse]:checked').value === '1',
     isUrbanArea: document.querySelector('input[name=isUrbanArea]:checked').value === '1',

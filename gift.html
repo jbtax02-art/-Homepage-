@@ -7,14 +7,17 @@
 <meta name="description" content="수증자와의 관계별 증여재산공제(배우자 6억, 직계존비속 5천만원 등)를 반영해 증여세 과세표준과 산출세액을 계산합니다.">
 <link rel="canonical" href="https://taxajin.com/gift.html">
 <link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="img/icon-square.png">
+<link rel="apple-touch-icon" href="img/icon-square.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1D77B5">
 </head>
 <body>
 
 <header class="site">
   <div class="site-bar">
     <a class="brand" href="index.html">
-      <span class="seal-mark">阿進</span>
-      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img">
     </a>
     <nav class="tabs">
       <a href="transfer.html">양도소득세</a>
@@ -22,8 +25,6 @@
       <a href="gift.html" class="active">증여세</a>
       <a href="inheritance.html">상속세</a>
       <a href="holding-tax.html">보유세</a>
-      <a href="inheritance-share.html">상속지분</a>
-      <a href="registration-cost.html">등기비용</a>
     </nav>
   </div>
 </header>
@@ -39,7 +40,7 @@
     <div class="field-grid">
       <div class="field">
         <label>증여재산가액 (원)</label>
-        <input type="number" id="g-giftValue" placeholder="예: 300000000" required>
+        <input type="text" inputmode="numeric" id="g-giftValue" placeholder="예: 300,000,000" required>
       </div>
       <div class="field">
         <label>수증자와의 관계</label>
@@ -52,7 +53,7 @@
       </div>
       <div class="field full">
         <label>최근 10년 내 동일인으로부터 받은 증여 중 공제받은 금액 (원)</label>
-        <input type="number" id="g-priorUsed" value="0">
+        <input type="text" inputmode="numeric" id="g-priorUsed" value="0">
         <span class="hint">10년 합산 기준 (§53) — 이전에 공제받은 금액만큼 이번 공제한도에서 차감됩니다</span>
       </div>
     </div>
@@ -97,12 +98,13 @@
 
 <script src="calc.js"></script>
 <script>
+attachThousandsAll('#g-giftValue, #g-priorUsed');
 document.getElementById('form-gift').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
-    giftValue: Number(document.getElementById('g-giftValue').value || 0),
+    giftValue: rawNumber(document.getElementById('g-giftValue')),
     relation: document.getElementById('g-relation').value,
-    priorUsed: Number(document.getElementById('g-priorUsed').value || 0),
+    priorUsed: rawNumber(document.getElementById('g-priorUsed')),
   };
   const r = calcGiftTax(p);
   document.getElementById('g-total').textContent = won(r.total);
