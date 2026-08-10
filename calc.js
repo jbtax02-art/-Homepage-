@@ -177,21 +177,28 @@ function calcAcquisitionTax(p){
   const acquisitionTax = base * rate;
   const localEduTax = (p.acquireType === 'trade' && rate <= 0.03) ? base * (rate/2) * 0.2 : (rate >= 0.08 ? base * 0.004 : 0);
   const ruralTax = p.exceedsArea85 ? base * (rate >= 0.08 ? (rate === 0.12 ? 0.01 : 0.006) : 0.002) : 0;
-  const total = acquisitionTax + localEduTax + ruralTax;
 
-  return {
-    rate, acquisitionTax, localEduTax, ruralTax, total,
-    rows: [
-      ['취득세율', (rate*100).toFixed(2) + '%'],
-      ['취득세', won(acquisitionTax)],
-      ['지방교육세', won(localEduTax)],
-      ['농어촌특별세', won(ruralTax)],
-    ]
-  };
+  // 생애최초 구입 감면 (지방세특례제한법 §36의3): 12억원 이하 주택, 취득세 200만원 한도 감면
+  let firstTimeDeduction = 0;
+  if (p.isFirstTime && p.acquireType === 'trade' && p.houseCount === 1 && p.price <= 1200000000) {
+    firstTimeDeduction = Math.min(acquisitionTax, 2000000);
+  }
+
+  const total = acquisitionTax + localEduTax + ruralTax - firstTimeDeduction;
+
+  const rows = [
+    ['취득세율', (rate*100).toFixed(2) + '%'],
+    ['취득세', won(acquisitionTax)],
+    ['지방교육세', won(localEduTax)],
+    ['농어촌특별세', won(ruralTax)],
+  ];
+  if (firstTimeDeduction > 0) rows.push(['생애최초 구입 감면', wonMinus(firstTimeDeduction)]);
+
+  return { rate, acquisitionTax, localEduTax, ruralTax, firstTimeDeduction, total, rows };
 }
 
 /* -------------------------------------------------------------------------
-   3) 증여세
+   3) 증여세 (부담부증여 채무인수액 반영 가능)
    ------------------------------------------------------------------------- */
 function calcGiftTax(p){
   const deductionTable = {
@@ -200,47 +207,59 @@ function calcGiftTax(p){
     lineal_minor: 20000000,
     other_relative: 10000000,
   };
+  const debt = p.debt || 0; // 부담부증여 시 수증자가 인수한 채무액 (상증세법 §47③)
+  const netGiftValue = clamp0(p.giftValue - debt);
   const cap = clamp0(deductionTable[p.relation] - p.priorUsed);
-  const deduction = Math.min(cap, p.giftValue);
-  const taxBase = clamp0(p.giftValue - deduction);
+  const deduction = Math.min(cap, netGiftValue);
+  const taxBase = clamp0(netGiftValue - deduction);
   const tax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
   const reportCredit = tax * 0.03; // 신고세액공제 3% (§69)
   const total = tax - reportCredit;
 
-  return {
-    deduction, taxBase, tax, reportCredit, total,
-    rows: [
-      ['증여재산가액', won(p.giftValue)],
-      ['증여재산공제', wonMinus(deduction)],
-      ['과세표준', won(taxBase)],
-      ['산출세액', won(tax)],
-      ['신고세액공제 (3%)', wonMinus(reportCredit)],
-    ]
-  };
+  const rows = [
+    ['증여재산가액', won(p.giftValue)],
+  ];
+  if (debt > 0) rows.push(['인수한 채무액', wonMinus(debt)]);
+  rows.push(
+    ['증여재산공제', wonMinus(deduction)],
+    ['과세표준', won(taxBase)],
+    ['산출세액', won(tax)],
+    ['신고세액공제 (3%)', wonMinus(reportCredit)],
+  );
+
+  return { debt, netGiftValue, deduction, taxBase, tax, reportCredit, total, rows };
 }
 
 /* -------------------------------------------------------------------------
-   4) 상속세 (간이 계산 — 배우자 유무 기준 일괄공제/배우자공제만 반영)
+   4) 상속세 — 일괄공제(5억)와 인적공제(기초2억+자녀·미성년·연로자) 중 큰 금액 자동 적용
    ------------------------------------------------------------------------- */
 function calcInheritanceTax(p){
   const lumpSum = 500000000; // 일괄공제 (§21)
+  const basicDeduction = 200000000; // 기초공제 (§18)
+  const childDeduction = (p.childCount || 0) * 50000000; // 자녀공제 1인당 5천만 (§20)
+  const minorDeduction = (p.minorRemainingYears || 0) * 10000000; // 미성년자공제: 잔여연수 합 × 1천만
+  const elderlyDeduction = (p.elderlyCount || 0) * 50000000; // 연로자공제(65세 이상) 1인당 5천만
+  const individualTotal = basicDeduction + childDeduction + minorDeduction + elderlyDeduction;
+  const generalDeduction = Math.max(lumpSum, individualTotal); // 일괄공제 vs 인적공제 중 큰 것 (§21②)
+
   const spouseDeduction = p.hasSpouse ? Math.min(Math.max(p.spouseShare, 500000000), 3000000000, p.totalEstate) : 0; // 배우자상속공제 5억~30억 (§19)
-  const totalDeduction = Math.min(lumpSum + spouseDeduction, p.totalEstate);
+  const totalDeduction = Math.min(generalDeduction + spouseDeduction, p.totalEstate);
   const taxBase = clamp0(p.totalEstate - totalDeduction);
   const tax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
   const reportCredit = tax * 0.03;
   const total = tax - reportCredit;
 
+  const rows = [
+    ['상속재산가액', won(p.totalEstate)],
+    [generalDeduction > lumpSum ? '인적공제 (일괄공제보다 유리)' : '일괄공제', wonMinus(generalDeduction)],
+    ['배우자상속공제', wonMinus(spouseDeduction)],
+    ['과세표준', won(taxBase)],
+    ['산출세액', won(tax)],
+    ['신고세액공제 (3%)', wonMinus(reportCredit)],
+  ];
+
   return {
-    lumpSum, spouseDeduction, totalDeduction, taxBase, tax, reportCredit, total,
-    rows: [
-      ['상속재산가액', won(p.totalEstate)],
-      ['일괄공제', wonMinus(lumpSum)],
-      ['배우자상속공제', wonMinus(spouseDeduction)],
-      ['과세표준', won(taxBase)],
-      ['산출세액', won(tax)],
-      ['신고세액공제 (3%)', wonMinus(reportCredit)],
-    ]
+    lumpSum, individualTotal, generalDeduction, spouseDeduction, totalDeduction, taxBase, tax, reportCredit, total, rows
   };
 }
 

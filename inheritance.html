@@ -54,6 +54,20 @@
         <input type="text" inputmode="numeric" id="i-spouseShare" value="0">
         <span class="hint">배우자상속공제는 최소 5억원, 최대 30억원 한도로 실제 상속받은 금액 기준 적용 (§19)</span>
       </div>
+      <div class="field">
+        <label>자녀 수 (명)</label>
+        <input type="number" id="i-childCount" value="0" min="0">
+      </div>
+      <div class="field">
+        <label>미성년 상속인의 만 19세까지 잔여연수 합계</label>
+        <input type="number" id="i-minorYears" value="0" min="0">
+        <span class="hint">예: 10세 자녀 1명이면 9년 입력</span>
+      </div>
+      <div class="field full">
+        <label>연로자(만 65세 이상) 상속인 수 (명)</label>
+        <input type="number" id="i-elderlyCount" value="0" min="0">
+        <span class="hint">자녀·미성년·연로자를 입력하지 않으면 자동으로 일괄공제 5억원이 적용됩니다. 입력 시 일괄공제와 인적공제(§18~§20) 중 더 유리한 금액이 자동 선택됩니다.</span>
+      </div>
     </div>
     <button type="submit" class="calc-btn">상속세 계산하기</button>
   </form>
@@ -103,6 +117,9 @@ document.getElementById('form-inherit').addEventListener('submit', function(e){
     totalEstate: rawNumber(document.getElementById('i-totalEstate')),
     hasSpouse: document.querySelector('input[name=hasSpouse]:checked').value === '1',
     spouseShare: rawNumber(document.getElementById('i-spouseShare')),
+    childCount: Number(document.getElementById('i-childCount').value || 0),
+    minorRemainingYears: Number(document.getElementById('i-minorYears').value || 0),
+    elderlyCount: Number(document.getElementById('i-elderlyCount').value || 0),
   };
   const r = calcInheritanceTax(p);
   document.getElementById('i-total').textContent = won(r.total);

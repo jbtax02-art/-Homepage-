@@ -49,6 +49,7 @@
       <div class="field">
         <label>취득가액 (또는 시가인정액, 원)</label>
         <input type="text" inputmode="numeric" id="a-price" placeholder="예: 600,000,000" required>
+        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a></span>
       </div>
       <div class="field">
         <label>취득 후 보유주택 수 (세대 기준)</label>
@@ -67,6 +68,14 @@
           <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
           <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
         </div>
+      </div>
+      <div class="field full">
+        <label>생애최초 주택 구입인가요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isFirstTime" value="1"><span>예</span></label>
+          <label><input type="radio" name="isFirstTime" value="0" checked><span>아니오</span></label>
+        </div>
+        <span class="hint">매매·1주택·12억원 이하 주택만 해당, 취득세 200만원 한도 감면 (지방세특례제한법 §36의3)</span>
       </div>
     </div>
     <button type="submit" class="calc-btn">취득세 계산하기</button>
@@ -119,6 +128,7 @@ document.getElementById('form-acq').addEventListener('submit', function(e){
     houseCount: Number(document.getElementById('a-houseCount').value || 1),
     exceedsArea85: document.querySelector('input[name=exceedsArea85]:checked').value === '1',
     isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+    isFirstTime: document.querySelector('input[name=isFirstTime]:checked').value === '1',
   };
   const r = calcAcquisitionTax(p);
   document.getElementById('a-total').textContent = won(r.total);

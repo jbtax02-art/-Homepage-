@@ -98,6 +98,7 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
 .field.full{grid-column:1 / -1;}
 .field label{font-size:13px; color:var(--muted);}
 .field .hint{font-size:11.5px; color:#7C93A6; margin-top:2px;}
+.field .hint a{color:var(--brand); text-decoration:underline;}
 .field input[type=number], .field input[type=text], .field select{
   background:var(--sky-bg); border:1px solid var(--border-strong); color:var(--text);
   padding:11px 12px; border-radius:var(--radius); font-size:15px; width:100%;
