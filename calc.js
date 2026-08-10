@@ -94,9 +94,12 @@ function calcTransferTax(p){
     };
   }
 
-  // 주택 / 조합원입주권 공통: 보유기간에 따라 단기세율 vs (기본세율/중과) 분기
+  // 단기보유세율: 주택·조합원입주권은 70%/60%, 비사업용토지·기타자산은 50%/40% (소득세법 §104①2·3호)
+  const isHouseLike = (p.assetType === 'house' || p.assetType === 'right');
   if (p.holdYears < 2) {
-    const rate = p.holdYears < 1 ? 0.70 : 0.60;
+    const rate = isHouseLike
+      ? (p.holdYears < 1 ? 0.70 : 0.60)
+      : (p.holdYears < 1 ? 0.50 : 0.40);
     const capitalGainsTax = gainAfterBasic * rate;
     const localIncomeTax = capitalGainsTax * 0.1;
     const total = capitalGainsTax + localIncomeTax;
@@ -112,7 +115,7 @@ function calcTransferTax(p){
     };
   }
 
-  // 2년 이상 보유: 장기보유특별공제 + 기본세율 (주택은 1세대1주택 특례 가능)
+  // 2년 이상 보유: 장기보유특별공제 + 기본세율(비사업용토지는 +10%p)
   let deductRate = 0;
   if (p.assetType === 'house' && p.isOneHouse) {
     const holdRate = Math.min(Math.floor(p.holdYears) * 0.04, 0.40);
@@ -124,14 +127,21 @@ function calcTransferTax(p){
   const specialDeduction = gain * deductRate;
   const taxBase = clamp0(gain - specialDeduction - basicDeduction);
 
-  const basic = progressiveTax(taxBase, INCOME_TAX_BRACKETS);
-  let surchargeTax = 0;
-  if (p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !p.isOneHouse) {
-    const addRate = p.houseCount === 2 ? 0.20 : 0.30;
-    const surchargeBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + addRate}));
-    surchargeTax = progressiveTax(gainAfterBasic, surchargeBrackets);
+  let capitalGainsTax;
+  if (p.assetType === 'nonbiz_land') {
+    // 비사업용토지: 기본세율 + 10%p 전 구간 가산 (소득세법 §104①8)
+    const nonbizBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.10}));
+    capitalGainsTax = progressiveTax(taxBase, nonbizBrackets);
+  } else {
+    const basic = progressiveTax(taxBase, INCOME_TAX_BRACKETS);
+    let surchargeTax = 0;
+    if (p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !p.isOneHouse) {
+      const addRate = p.houseCount === 2 ? 0.20 : 0.30;
+      const surchargeBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + addRate}));
+      surchargeTax = progressiveTax(gainAfterBasic, surchargeBrackets);
+    }
+    capitalGainsTax = Math.max(basic, surchargeTax);
   }
-  const capitalGainsTax = Math.max(basic, surchargeTax);
   const localIncomeTax = capitalGainsTax * 0.1;
   const total = capitalGainsTax + localIncomeTax;
 
@@ -153,34 +163,69 @@ function calcTransferTax(p){
    2) 취득세 (유상취득 / 증여취득 / 상속취득)
    ------------------------------------------------------------------------- */
 function calcAcquisitionTax(p){
+  const { assetType, acquireType, price, houseCount, isAdjustedArea, exceedsArea85, isSelfFarmed } = p;
   let rate;
-  let base = p.price;
 
-  if (p.acquireType === 'inherit') {
-    rate = 0.028; // 상속취득 2.8%
-  } else if (p.acquireType === 'gift') {
-    rate = (p.isAdjustedArea && p.price >= 300000000) ? 0.12 : 0.035; // 증여 3.5%, 조정지역 3억↑ 12%
-  } else {
-    // 유상취득
-    if (p.houseCount >= 2 && p.isAdjustedArea) {
-      rate = p.houseCount === 2 ? 0.08 : 0.12;
-    } else if (p.houseCount >= 4 && !p.isAdjustedArea) {
-      rate = 0.12; // 비조정지역 4주택↑ 12%
-    } else {
-      // 기본세율 (지방세법 §11): 6억↓ 1%, 6~9억 구간산식, 9억↑ 3%
-      if (p.price <= 600000000) rate = 0.01;
-      else if (p.price <= 900000000) rate = (p.price / 300000000 * 2 - 3) / 100;
-      else rate = 0.03;
+  if (assetType === 'house') {
+    if (acquireType === 'inherit' || acquireType === 'original') rate = 0.028; // 상속·원시 2.8%
+    else if (acquireType === 'gift') rate = (isAdjustedArea && price >= 300000000) ? 0.12 : 0.035;
+    else {
+      // 매매(유상취득)
+      if (houseCount >= 2 && isAdjustedArea) rate = houseCount === 2 ? 0.08 : 0.12;
+      else if (houseCount >= 4 && !isAdjustedArea) rate = 0.12;
+      else {
+        if (price <= 600000000) rate = 0.01;
+        else if (price <= 900000000) rate = (price / 300000000 * 2 - 3) / 100;
+        else rate = 0.03;
+      }
     }
+  } else if (assetType === 'officetel') {
+    if (acquireType === 'inherit' || acquireType === 'original') rate = 0.028;
+    else if (acquireType === 'gift') rate = 0.035;
+    else rate = 0.04; // 매매 고정 4% (주택법상 주택 아님, 다주택 중과 대상 아님)
+  } else if (assetType === 'farmland') {
+    if (acquireType === 'inherit') rate = 0.023; // 농지 상속은 2.3%로 일반상속(2.8%)과 다름
+    else if (acquireType === 'original') rate = 0.028;
+    else if (acquireType === 'gift') rate = 0.035;
+    else rate = isSelfFarmed ? 0.015 : 0.03; // 매매: 2년 이상 자경 1.5%, 신규 3%
+  } else {
+    // 그 외 (토지·상가·건물 등 일반)
+    if (acquireType === 'inherit' || acquireType === 'original') rate = 0.028;
+    else if (acquireType === 'gift') rate = 0.035;
+    else rate = 0.04;
   }
 
+  const base = price;
   const acquisitionTax = base * rate;
-  const localEduTax = (p.acquireType === 'trade' && rate <= 0.03) ? base * (rate/2) * 0.2 : (rate >= 0.08 ? base * 0.004 : 0);
-  const ruralTax = p.exceedsArea85 ? base * (rate >= 0.08 ? (rate === 0.12 ? 0.01 : 0.006) : 0.002) : 0;
+  const isHouseHeavy = assetType === 'house' && (rate === 0.08 || rate === 0.12);
 
-  // 생애최초 구입 감면 (지방세특례제한법 §36의3): 12억원 이하 주택, 취득세 200만원 한도 감면
+  // 지방교육세: 주택 유상취득은 취득세율의 1/10, 그 외(무상·원시·비주택)는 (세율-2%)×20% (지방세법 §151①)
+  let localEduTax;
+  if (assetType === 'farmland' && acquireType === 'trade' && isSelfFarmed) {
+    localEduTax = base * 0.001; // 2년 이상 자경 농지 감면 특례 (실무 확인값 0.1%)
+  } else if (assetType === 'house' && acquireType === 'trade' && !isHouseHeavy) {
+    localEduTax = acquisitionTax * 0.1;
+  } else if (isHouseHeavy) {
+    localEduTax = base * 0.004;
+  } else {
+    localEduTax = base * Math.max(rate - 0.02, 0) * 0.2;
+  }
+
+  // 농어촌특별세: 주택은 전용 85㎡ 초과 시만, 그 외 자산은 규모 무관 0.2% (농특세법 §5)
+  let ruralTax;
+  if (assetType === 'farmland' && acquireType === 'trade' && isSelfFarmed) {
+    ruralTax = 0;
+  } else if (assetType === 'house') {
+    ruralTax = isHouseHeavy
+      ? (exceedsArea85 ? base * (rate === 0.12 ? 0.01 : 0.006) : 0)
+      : (exceedsArea85 ? base * 0.002 : 0);
+  } else {
+    ruralTax = base * 0.002;
+  }
+
+  // 생애최초 구입 감면 (지방세특례제한법 §36의3): 주택·매매·1주택·12억원 이하, 취득세 200만원 한도 감면
   let firstTimeDeduction = 0;
-  if (p.isFirstTime && p.acquireType === 'trade' && p.houseCount === 1 && p.price <= 1200000000) {
+  if (p.isFirstTime && assetType === 'house' && acquireType === 'trade' && houseCount === 1 && price <= 1200000000) {
     firstTimeDeduction = Math.min(acquisitionTax, 2000000);
   }
 
@@ -210,7 +255,15 @@ function calcGiftTax(p){
   const debt = p.debt || 0; // 부담부증여 시 수증자가 인수한 채무액 (상증세법 §47③)
   const netGiftValue = clamp0(p.giftValue - debt);
   const cap = clamp0(deductionTable[p.relation] - p.priorUsed);
-  const deduction = Math.min(cap, netGiftValue);
+  const relationDeduction = Math.min(cap, netGiftValue);
+
+  // 혼인·출산 증여재산공제 (§53의2, 2024.1.1 시행): 혼인신고일 전후 2년(출산은 출생일부터 2년) 이내
+  // 직계존속 증여에 한해 기존 공제와 별도로 최대 1억원 추가 공제 (혼인+출산 합산 1억 한도)
+  const marriageChildDeduction = (p.useMarriageChildDeduction && (p.relation === 'lineal_adult' || p.relation === 'lineal_minor'))
+    ? Math.min(100000000, clamp0(netGiftValue - relationDeduction))
+    : 0;
+
+  const deduction = relationDeduction + marriageChildDeduction;
   const taxBase = clamp0(netGiftValue - deduction);
   const tax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
   const reportCredit = tax * 0.03; // 신고세액공제 3% (§69)
@@ -220,20 +273,28 @@ function calcGiftTax(p){
     ['증여재산가액', won(p.giftValue)],
   ];
   if (debt > 0) rows.push(['인수한 채무액', wonMinus(debt)]);
+  rows.push(['증여재산공제', wonMinus(relationDeduction)]);
+  if (marriageChildDeduction > 0) rows.push(['혼인·출산 증여재산공제', wonMinus(marriageChildDeduction)]);
   rows.push(
-    ['증여재산공제', wonMinus(deduction)],
     ['과세표준', won(taxBase)],
     ['산출세액', won(tax)],
     ['신고세액공제 (3%)', wonMinus(reportCredit)],
   );
 
-  return { debt, netGiftValue, deduction, taxBase, tax, reportCredit, total, rows };
+  return { debt, netGiftValue, relationDeduction, marriageChildDeduction, deduction, taxBase, tax, reportCredit, total, rows };
 }
 
 /* -------------------------------------------------------------------------
    4) 상속세 — 일괄공제(5억)와 인적공제(기초2억+자녀·미성년·연로자) 중 큰 금액 자동 적용
    ------------------------------------------------------------------------- */
 function calcInheritanceTax(p){
+  // 상속세 과세가액 = 상속재산가액 + 사전증여재산가산액 - 공과금 - 장례비용 - 채무 (§13, §14)
+  const priorGift = p.priorGift || 0; // 상속인 10년·비상속인 5년 이내 사전증여재산 가산
+  const publicDues = p.publicDues || 0; // 공과금
+  const funeralCost = p.funeralCost || 0; // 장례비용 (§14, 통상 500만~1500만원 한도)
+  const debt = p.debt || 0; // 채무
+  const taxableEstate = clamp0(p.totalEstate + priorGift - publicDues - funeralCost - debt);
+
   const lumpSum = 500000000; // 일괄공제 (§21)
   const basicDeduction = 200000000; // 기초공제 (§18)
   const childDeduction = (p.childCount || 0) * 50000000; // 자녀공제 1인당 5천만 (§20)
@@ -242,24 +303,38 @@ function calcInheritanceTax(p){
   const individualTotal = basicDeduction + childDeduction + minorDeduction + elderlyDeduction;
   const generalDeduction = Math.max(lumpSum, individualTotal); // 일괄공제 vs 인적공제 중 큰 것 (§21②)
 
-  const spouseDeduction = p.hasSpouse ? Math.min(Math.max(p.spouseShare, 500000000), 3000000000, p.totalEstate) : 0; // 배우자상속공제 5억~30억 (§19)
-  const totalDeduction = Math.min(generalDeduction + spouseDeduction, p.totalEstate);
-  const taxBase = clamp0(p.totalEstate - totalDeduction);
-  const tax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
-  const reportCredit = tax * 0.03;
-  const total = tax - reportCredit;
+  const spouseDeduction = p.hasSpouse ? Math.min(Math.max(p.spouseShare, 500000000), 3000000000, taxableEstate) : 0; // 배우자상속공제 5억~30억 (§19)
+  const financialDeduction = Math.min(Math.max((p.financialAsset || 0) * 0.2, (p.financialAsset || 0) > 0 ? 20000000 : 0), 200000000); // 금융재산상속공제 (§22): 순금융재산의 20%와 2천만원 중 큰 금액, 최대 2억
+  const totalDeduction = Math.min(generalDeduction + spouseDeduction + financialDeduction, taxableEstate);
+  const taxBase = clamp0(taxableEstate - totalDeduction);
+  const grossTax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
+
+  const giftTaxCredit = Math.min(p.giftTaxCredit || 0, grossTax); // 증여세액공제 (§28, 사전증여분 기납부세액 이중과세 조정)
+  const taxAfterCredit = clamp0(grossTax - giftTaxCredit);
+  const reportCredit = taxAfterCredit * 0.03; // 신고세액공제 3% (§69)
+  const total = taxAfterCredit - reportCredit;
 
   const rows = [
     ['상속재산가액', won(p.totalEstate)],
-    [generalDeduction > lumpSum ? '인적공제 (일괄공제보다 유리)' : '일괄공제', wonMinus(generalDeduction)],
-    ['배우자상속공제', wonMinus(spouseDeduction)],
-    ['과세표준', won(taxBase)],
-    ['산출세액', won(tax)],
-    ['신고세액공제 (3%)', wonMinus(reportCredit)],
   ];
+  if (priorGift > 0) rows.push(['사전증여재산가산액', won(priorGift)]);
+  if (publicDues > 0) rows.push(['공과금', wonMinus(publicDues)]);
+  if (funeralCost > 0) rows.push(['장례비용', wonMinus(funeralCost)]);
+  if (debt > 0) rows.push(['채무', wonMinus(debt)]);
+  rows.push(['상속세 과세가액', won(taxableEstate)]);
+  rows.push([generalDeduction > lumpSum ? '인적공제 (일괄공제보다 유리)' : '일괄공제', wonMinus(generalDeduction)]);
+  rows.push(['배우자상속공제', wonMinus(spouseDeduction)]);
+  if (financialDeduction > 0) rows.push(['금융재산상속공제', wonMinus(financialDeduction)]);
+  rows.push(
+    ['과세표준', won(taxBase)],
+    ['산출세액', won(grossTax)],
+  );
+  if (giftTaxCredit > 0) rows.push(['증여세액공제', wonMinus(giftTaxCredit)]);
+  rows.push(['신고세액공제 (3%)', wonMinus(reportCredit)]);
 
   return {
-    lumpSum, individualTotal, generalDeduction, spouseDeduction, totalDeduction, taxBase, tax, reportCredit, total, rows
+    taxableEstate, lumpSum, individualTotal, generalDeduction, spouseDeduction, financialDeduction,
+    totalDeduction, taxBase, grossTax, giftTaxCredit, reportCredit, total, rows
   };
 }
 

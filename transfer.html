@@ -44,6 +44,8 @@
           <label><input type="radio" name="assetType" value="house" checked><span>주택</span></label>
           <label><input type="radio" name="assetType" value="presale"><span>분양권</span></label>
           <label><input type="radio" name="assetType" value="right"><span>조합원입주권</span></label>
+          <label><input type="radio" name="assetType" value="nonbiz_land"><span>비사업용토지</span></label>
+          <label><input type="radio" name="assetType" value="other_asset"><span>기타자산(상가·사업용토지 등)</span></label>
         </div>
         <span class="hint" id="t-assetHint">주택: 2년 이상 보유 시 기본세율(6~45%)+장기보유특별공제 적용</span>
       </div>
@@ -147,6 +149,8 @@ const assetHintText = {
   house: '주택: 2년 이상 보유 시 기본세율(6~45%)+장기보유특별공제 적용, 1년 미만 70%·1~2년 60% 단기세율',
   presale: '분양권: 보유기간과 무관하게 60%(1년 미만 70%) 단일세율 고정, 장기보유특별공제 없음',
   right: '조합원입주권: 2년 이상 보유 시 기본세율+일반 장기보유특별공제(연 2%), 1주택 특례는 미적용',
+  nonbiz_land: '비사업용토지: 기본세율에 10%p 가산, 단기세율은 1년 미만 50%·1~2년 40%로 주택보다 낮음',
+  other_asset: '기타자산(상가·사업용토지 등): 기본세율 적용, 단기세율은 1년 미만 50%·1~2년 40%',
 };
 document.querySelectorAll('input[name=assetType]').forEach(function(radio){
   radio.addEventListener('change', function(){

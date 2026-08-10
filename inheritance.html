@@ -39,8 +39,26 @@
   <form class="calc-panel" id="form-inherit">
     <div class="field-grid">
       <div class="field">
-        <label>상속재산가액 (채무·장례비 차감 후, 원)</label>
+        <label>상속재산가액 (채무·장례비 차감 전 총액, 원)</label>
         <input type="text" inputmode="numeric" id="i-totalEstate" placeholder="예: 1,500,000,000" required>
+      </div>
+      <div class="field">
+        <label>사전증여재산가산액 (원)</label>
+        <input type="text" inputmode="numeric" id="i-priorGift" value="0">
+        <span class="hint">상속인은 10년, 상속인 외는 5년 이내 증여재산은 상속세 과세가액에 가산 (§13)</span>
+      </div>
+      <div class="field">
+        <label>공과금 (원)</label>
+        <input type="text" inputmode="numeric" id="i-publicDues" value="0">
+      </div>
+      <div class="field">
+        <label>장례비용 (원)</label>
+        <input type="text" inputmode="numeric" id="i-funeralCost" value="0">
+        <span class="hint">통상 500만~1,500만원 한도, 봉안시설비는 500만원 별도 (§14)</span>
+      </div>
+      <div class="field full">
+        <label>채무 (원)</label>
+        <input type="text" inputmode="numeric" id="i-debt" value="0">
       </div>
       <div class="field">
         <label>배우자가 생존해 있나요?</label>
@@ -49,10 +67,10 @@
           <label><input type="radio" name="hasSpouse" value="0"><span>아니오</span></label>
         </div>
       </div>
-      <div class="field full">
+      <div class="field">
         <label>배우자의 실제 상속분 (원)</label>
         <input type="text" inputmode="numeric" id="i-spouseShare" value="0">
-        <span class="hint">배우자상속공제는 최소 5억원, 최대 30억원 한도로 실제 상속받은 금액 기준 적용 (§19)</span>
+        <span class="hint">최소 5억원, 최대 30억원 한도 (§19)</span>
       </div>
       <div class="field">
         <label>자녀 수 (명)</label>
@@ -63,10 +81,19 @@
         <input type="number" id="i-minorYears" value="0" min="0">
         <span class="hint">예: 10세 자녀 1명이면 9년 입력</span>
       </div>
-      <div class="field full">
+      <div class="field">
         <label>연로자(만 65세 이상) 상속인 수 (명)</label>
         <input type="number" id="i-elderlyCount" value="0" min="0">
-        <span class="hint">자녀·미성년·연로자를 입력하지 않으면 자동으로 일괄공제 5억원이 적용됩니다. 입력 시 일괄공제와 인적공제(§18~§20) 중 더 유리한 금액이 자동 선택됩니다.</span>
+      </div>
+      <div class="field">
+        <label>순금융재산 상속액 (원)</label>
+        <input type="text" inputmode="numeric" id="i-financialAsset" value="0">
+        <span class="hint">예금·보험금·주식 등, 금융채무는 제외. 순금융재산의 20%와 2천만원 중 큰 금액을 최대 2억원까지 공제 (§22)</span>
+      </div>
+      <div class="field full">
+        <label>사전증여재산에 대해 이미 낸 증여세액 (원)</label>
+        <input type="text" inputmode="numeric" id="i-giftTaxCredit" value="0">
+        <span class="hint">사전증여재산가산액이 있는 경우, 이미 납부한 증여세를 상속세에서 공제해 이중과세를 조정합니다 (§28). 자녀·미성년·연로자와 금융재산을 입력하지 않으면 일괄공제 5억원이 자동 적용됩니다.</span>
       </div>
     </div>
     <button type="submit" class="calc-btn">상속세 계산하기</button>
@@ -110,16 +137,22 @@
 
 <script src="calc.js"></script>
 <script>
-attachThousandsAll('#i-totalEstate, #i-spouseShare');
+attachThousandsAll('#i-totalEstate, #i-spouseShare, #i-priorGift, #i-publicDues, #i-funeralCost, #i-debt, #i-financialAsset, #i-giftTaxCredit');
 document.getElementById('form-inherit').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
     totalEstate: rawNumber(document.getElementById('i-totalEstate')),
+    priorGift: rawNumber(document.getElementById('i-priorGift')),
+    publicDues: rawNumber(document.getElementById('i-publicDues')),
+    funeralCost: rawNumber(document.getElementById('i-funeralCost')),
+    debt: rawNumber(document.getElementById('i-debt')),
     hasSpouse: document.querySelector('input[name=hasSpouse]:checked').value === '1',
     spouseShare: rawNumber(document.getElementById('i-spouseShare')),
     childCount: Number(document.getElementById('i-childCount').value || 0),
     minorRemainingYears: Number(document.getElementById('i-minorYears').value || 0),
     elderlyCount: Number(document.getElementById('i-elderlyCount').value || 0),
+    financialAsset: rawNumber(document.getElementById('i-financialAsset')),
+    giftTaxCredit: rawNumber(document.getElementById('i-giftTaxCredit')),
   };
   const r = calcInheritanceTax(p);
   document.getElementById('i-total').textContent = won(r.total);

@@ -61,6 +61,14 @@
         <input type="text" inputmode="numeric" id="g-debt" value="0">
         <span class="hint">증여재산가액에서 채무액을 뺀 금액이 증여세 과세대상입니다 (§47③). 채무 인수분은 증여자에게 별도로 양도소득세가 발생할 수 있습니다.</span>
       </div>
+      <div class="field full">
+        <label>혼인·출산 증여재산공제를 적용하나요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="useMarriageChildDeduction" value="1"><span>예</span></label>
+          <label><input type="radio" name="useMarriageChildDeduction" value="0" checked><span>아니오</span></label>
+        </div>
+        <span class="hint">혼인신고일 전후 2년(출산은 출생일부터 2년) 이내 직계존속 증여 시 기존 공제와 별도로 최대 1억원 추가 공제 (§53의2, 2024.1.1 시행). 직계존비속 증여에만 적용됩니다.</span>
+      </div>
     </div>
     <button type="submit" class="calc-btn">증여세 계산하기</button>
   </form>
@@ -111,6 +119,7 @@ document.getElementById('form-gift').addEventListener('submit', function(e){
     relation: document.getElementById('g-relation').value,
     priorUsed: rawNumber(document.getElementById('g-priorUsed')),
     debt: rawNumber(document.getElementById('g-debt')),
+    useMarriageChildDeduction: document.querySelector('input[name=useMarriageChildDeduction]:checked').value === '1',
   };
   const r = calcGiftTax(p);
   document.getElementById('g-total').textContent = won(r.total);

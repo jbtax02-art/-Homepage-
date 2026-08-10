@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>취득세 계산기 2026 | 전주 세무회계 아진</title>
-<meta name="description" content="매매·증여·상속 취득 원인과 조정대상지역, 보유주택수를 반영해 취득세·지방교육세·농어촌특별세를 계산합니다.">
+<title>취득세 계산기 2026 (주택·오피스텔·농지·그외) | 세무회계 아진</title>
+<meta name="description" content="주택, 오피스텔, 농지, 그 외 부동산별로 매매·증여·상속·원시취득 세율을 반영해 취득세·지방교육세·농어촌특별세를 계산합니다.">
 <link rel="canonical" href="https://taxajin.com/acquisition.html">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" type="image/png" href="img/icon-square.png">
@@ -33,49 +33,67 @@
   <section class="hero">
     <span class="eyebrow">부동산 취득세</span>
     <h1>취득세 <em>계산기</em></h1>
-    <p>취득 원인(매매·증여·상속)과 조정대상지역 여부, 보유주택 수를 반영해 취득세·지방교육세·농어촌특별세를 한 번에 계산합니다.</p>
+    <p>주택, 오피스텔, 농지, 그 외 부동산은 세율 체계가 서로 다릅니다. 자산 종류와 취득 원인(매매·증여·상속·원시취득)을 선택하면 그에 맞는 세율이 자동 적용됩니다.</p>
   </section>
 
   <form class="calc-panel" id="form-acq">
     <div class="field-grid">
+      <div class="field full">
+        <label>자산 종류</label>
+        <div class="radio-row" id="a-assetType">
+          <label><input type="radio" name="assetType" value="house" checked><span>주택</span></label>
+          <label><input type="radio" name="assetType" value="officetel"><span>오피스텔</span></label>
+          <label><input type="radio" name="assetType" value="farmland"><span>농지</span></label>
+          <label><input type="radio" name="assetType" value="other"><span>그 외 (상가·토지·건물)</span></label>
+        </div>
+      </div>
       <div class="field full">
         <label>취득 원인</label>
         <div class="radio-row">
           <label><input type="radio" name="acquireType" value="trade" checked><span>매매(유상취득)</span></label>
           <label><input type="radio" name="acquireType" value="gift"><span>증여</span></label>
           <label><input type="radio" name="acquireType" value="inherit"><span>상속</span></label>
+          <label><input type="radio" name="acquireType" value="original"><span>원시취득(신축)</span></label>
         </div>
+        <span class="hint" id="a-typeHint">주택 매매: 6억이하 1%, 6~9억 구간산식, 9억초과 3% (다주택·조정지역 중과 별도)</span>
       </div>
       <div class="field">
         <label>취득가액 (또는 시가인정액, 원)</label>
         <input type="text" inputmode="numeric" id="a-price" placeholder="예: 600,000,000" required>
         <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a></span>
       </div>
-      <div class="field">
-        <label>취득 후 보유주택 수 (세대 기준)</label>
+      <div class="field" id="a-houseCountField">
+        <label>취득 후 보유주택 수 (세대 기준, 주택만 해당)</label>
         <input type="number" id="a-houseCount" value="1" min="1">
       </div>
-      <div class="field">
-        <label>전용면적 85㎡ 초과 여부</label>
+      <div class="field" id="a-areaField">
+        <label>전용면적 85㎡ 초과 여부 (주택만 해당)</label>
         <div class="radio-row">
           <label><input type="radio" name="exceedsArea85" value="1"><span>예</span></label>
           <label><input type="radio" name="exceedsArea85" value="0" checked><span>아니오</span></label>
         </div>
       </div>
-      <div class="field">
-        <label>조정대상지역 내 부동산인가요?</label>
+      <div class="field" id="a-adjustedField">
+        <label>조정대상지역 내 부동산인가요? (주택만 해당)</label>
         <div class="radio-row">
           <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
           <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
         </div>
       </div>
-      <div class="field full">
-        <label>생애최초 주택 구입인가요?</label>
+      <div class="field" id="a-farmingField" style="display:none">
+        <label>2년 이상 자경(직접 경작)했나요? (농지 매매만 해당)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isSelfFarmed" value="1"><span>예</span></label>
+          <label><input type="radio" name="isSelfFarmed" value="0" checked><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field full" id="a-firstTimeField">
+        <label>생애최초 주택 구입인가요? (주택 매매·1주택만 해당)</label>
         <div class="radio-row">
           <label><input type="radio" name="isFirstTime" value="1"><span>예</span></label>
           <label><input type="radio" name="isFirstTime" value="0" checked><span>아니오</span></label>
         </div>
-        <span class="hint">매매·1주택·12억원 이하 주택만 해당, 취득세 200만원 한도 감면 (지방세특례제한법 §36의3)</span>
+        <span class="hint">12억원 이하 주택, 취득세 200만원 한도 감면 (지방세특례제한법 §36의3)</span>
       </div>
     </div>
     <button type="submit" class="calc-btn">취득세 계산하기</button>
@@ -86,8 +104,8 @@
     <h3>예상 납부세액</h3>
     <div class="headline" id="a-total">0원</div>
     <div class="breakdown" id="a-breakdown"></div>
-    <p class="cite">근거: 지방세법 §11(취득세 기본세율), §13의2(다주택 중과), 지방교육세법, 농어촌특별세법</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 생애최초 감면, 일시적 2주택 특례, 지방 저가주택 예외 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
+    <p class="cite">근거: 지방세법 §11(취득세율), §13의2(다주택 중과), §151(지방교육세), 농어촌특별세법 §5</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 일시적 2주택 특례, 지방 저가주택 예외, 임대사업자 감면 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
   </div>
 
   <div class="cta">
@@ -96,8 +114,8 @@
   </div>
 
   <section class="info-section">
-    <h2>취득세, 이렇게 계산됩니다</h2>
-    <p>주택 유상취득 시 기본세율은 6억원 이하 1%, 9억원 초과 3%이며 그 사이 구간은 <span class="law-ref">지방세법 §11</span>의 산식으로 계산합니다. 조정대상지역 내 2주택은 8%, 3주택 이상은 12%로 중과되고, 증여취득은 3.5%(조정지역 3억원 이상 12%), 상속취득은 2.8%가 적용됩니다. 여기에 지방교육세와 전용 85㎡ 초과 시 농어촌특별세가 추가됩니다.</p>
+    <h2>자산 종류별로 취득세율이 다릅니다</h2>
+    <p><b>주택</b>은 매매 시 가액에 따라 1~3%(다주택·조정지역 중과 시 8·12%), 증여 3.5%(조정지역 3억원 이상 12%), 상속·원시취득 2.8%가 적용됩니다. <b>오피스텔</b>은 주택법상 주택이 아니어서 매매 시 다주택 여부와 무관하게 4% 고정세율이 적용됩니다. <b>농지</b>는 매매 시 신규 3%, 2년 이상 자경 시 1.5%로 우대되고 상속은 2.3%로 일반 상속(2.8%)보다 낮습니다. <b>그 외</b> 토지·상가·건물은 매매 4%, 증여 3.5%, 상속·원시취득 2.8%입니다.</p>
   </section>
 
   <div class="related">
@@ -120,14 +138,61 @@
 <script src="calc.js"></script>
 <script>
 attachThousandsAll('#a-price');
+
+const houseOnlyFieldIds = ['a-houseCountField', 'a-areaField', 'a-adjustedField'];
+const typeHintText = {
+  house: {
+    trade: '주택 매매: 6억이하 1%, 6~9억 구간산식, 9억초과 3% (조정지역 다주택 8·12% 중과)',
+    gift: '주택 증여: 3.5% (조정대상지역 내 시가표준액 3억원 이상은 12%)',
+    inherit: '주택 상속: 2.8%',
+    original: '주택 원시취득(신축): 2.8%',
+  },
+  officetel: {
+    trade: '오피스텔 매매: 4.0% 고정 (주택법상 주택이 아니라 다주택·조정지역 중과 대상 아님)',
+    gift: '오피스텔 증여: 3.5%',
+    inherit: '오피스텔 상속: 2.8%',
+    original: '오피스텔 원시취득: 2.8%',
+  },
+  farmland: {
+    trade: '농지 매매: 신규 3%, 2년 이상 자경 시 1.5%',
+    gift: '농지 증여: 3.5%',
+    inherit: '농지 상속: 2.3% (일반 상속 2.8%보다 낮음)',
+    original: '농지 원시취득: 2.8%',
+  },
+  other: {
+    trade: '그 외(상가·토지·건물) 매매: 4.0%',
+    gift: '그 외 증여: 3.5%',
+    inherit: '그 외 상속: 2.8%',
+    original: '그 외 원시취득(신축): 2.8%',
+  },
+};
+
+function refreshAcqUI(){
+  const assetType = document.querySelector('input[name=assetType]:checked').value;
+  const acquireType = document.querySelector('input[name=acquireType]:checked').value;
+  const isHouse = assetType === 'house';
+  const isFarmland = assetType === 'farmland';
+
+  houseOnlyFieldIds.forEach(id => { document.getElementById(id).style.display = isHouse ? '' : 'none'; });
+  document.getElementById('a-firstTimeField').style.display = (isHouse && acquireType === 'trade') ? '' : 'none';
+  document.getElementById('a-farmingField').style.display = (isFarmland && acquireType === 'trade') ? '' : 'none';
+  document.getElementById('a-typeHint').textContent = typeHintText[assetType][acquireType];
+}
+document.querySelectorAll('input[name=assetType], input[name=acquireType]').forEach(function(radio){
+  radio.addEventListener('change', refreshAcqUI);
+});
+refreshAcqUI();
+
 document.getElementById('form-acq').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
+    assetType: document.querySelector('input[name=assetType]:checked').value,
     acquireType: document.querySelector('input[name=acquireType]:checked').value,
     price: rawNumber(document.getElementById('a-price')),
     houseCount: Number(document.getElementById('a-houseCount').value || 1),
     exceedsArea85: document.querySelector('input[name=exceedsArea85]:checked').value === '1',
     isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+    isSelfFarmed: document.querySelector('input[name=isSelfFarmed]:checked').value === '1',
     isFirstTime: document.querySelector('input[name=isFirstTime]:checked').value === '1',
   };
   const r = calcAcquisitionTax(p);
