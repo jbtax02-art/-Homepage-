@@ -1,40 +1,39 @@
 /* ==========================================================================
    TAXAJIN — 세무회계 아진 부동산 세금 계산기
-   Design tokens
+   Design tokens (v2 — Sky Blue)
    -------------------------------------------------------------------------
    Color
-     --ink        #14181F  본문 배경 (깊은 먹색)
-     --ink-soft   #1D232D  카드/패널 배경 (먹색보다 한 톤 밝게)
-     --paper      #F6F2E9  결과 카드 배경 (한지/서류 느낌의 아이보리)
-     --seal       #A23B2E  인주색 — CTA, 강조, 인감 모티프
-     --brass      #B8935B  놋쇠색 — 라인, 보조 강조
-     --line       #2C333F  구분선 (다크 섹션)
-     --line-paper #E4DCC8  구분선 (라이트 섹션)
-     --ink-text   #EDEAE2  본문 텍스트 (다크 섹션)
-     --muted      #8A93A3  보조 텍스트 (다크 섹션)
-     --paper-text #1C1917  본문 텍스트 (라이트 섹션)
+     --sky-bg     #EEF6FC  페이지 배경 (옅은 하늘색)
+     --white      #FFFFFF  카드 배경
+     --panel      #E6F2FB  보조 패널 배경 (연한 하늘색)
+     --border     #CFE3F2  구분선/테두리
+     --brand      #1D77B5  브랜드 블루 — CTA, 링크, 강조
+     --brand-deep #0F4C77  진한 블루 — 헤더 텍스트, 호버
+     --brand-light#6FB8E3  밝은 블루 — 배지, 보조 강조
+     --text       #16232E  본문 텍스트
+     --muted      #5C7285  보조 텍스트
+     --stamp      #1D77B5  인장 모티프 (블루톤)
 
    Type
      Display : "Noto Serif KR"  — 관인 서류를 연상시키는 명조 헤드라인
      Body    : "Pretendard"     — 가독성 위주 본문
-     Numeric : "Pretendard", tabular-nums — 계산 결과 전용
    ========================================================================== */
 
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&display=swap');
 
 :root{
-  --ink:#14181F; --ink-soft:#1D232D; --paper:#F6F2E9;
-  --seal:#A23B2E; --seal-dim:#7C2D22; --brass:#B8935B;
-  --line:#2C333F; --line-paper:#E4DCC8;
-  --ink-text:#EDEAE2; --muted:#8A93A3; --paper-text:#1C1917;
-  --radius:2px;
+  --sky-bg:#EEF6FC; --white:#FFFFFF; --panel:#E6F2FB; --panel-deep:#D8ECFA;
+  --border:#CFE3F2; --border-strong:#AED4EC;
+  --brand:#1D77B5; --brand-deep:#0F4C77; --brand-light:#6FB8E3;
+  --text:#16232E; --muted:#5C7285; --stamp:#1D77B5;
+  --radius:3px;
 }
 
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{
-  margin:0; background:var(--ink); color:var(--ink-text);
+  margin:0; background:var(--sky-bg); color:var(--text);
   font-family:'Pretendard Variable','Pretendard',-apple-system,sans-serif;
   font-feature-settings:'tnum' 1;
   -webkit-font-smoothing:antialiased;
@@ -52,9 +51,9 @@ button{font-family:inherit;}
 
 /* ---------- 헤더 / 인감 로고 ---------- */
 header.site{
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid var(--border);
   position:sticky; top:0; z-index:50;
-  background:rgba(20,24,31,.92); backdrop-filter:blur(8px);
+  background:rgba(238,246,252,.92); backdrop-filter:blur(8px);
 }
 .site-bar{
   display:flex; align-items:center; justify-content:space-between;
@@ -63,26 +62,26 @@ header.site{
 .brand{display:flex; align-items:center; gap:10px; text-decoration:none;}
 .seal-mark{
   width:34px; height:34px; border-radius:50%;
-  border:2px solid var(--seal); color:var(--seal);
+  border:2px solid var(--stamp); color:var(--stamp);
   display:flex; align-items:center; justify-content:center;
   font-family:'Noto Serif KR',serif; font-weight:900; font-size:14px;
-  transform:rotate(-6deg); flex-shrink:0;
+  transform:rotate(-6deg); flex-shrink:0; background:var(--white);
 }
-.brand-name{font-family:'Noto Serif KR',serif; font-weight:700; font-size:17px; color:var(--ink-text);}
+.brand-name{font-family:'Noto Serif KR',serif; font-weight:700; font-size:17px; color:var(--brand-deep);}
 .brand-sub{display:block; font-size:11px; color:var(--muted); font-weight:400; letter-spacing:.02em;}
 
 nav.tabs{display:flex; gap:2px;}
 nav.tabs a{
-  padding:9px 14px; font-size:14px; text-decoration:none; color:var(--muted);
-  border-bottom:2px solid transparent; transition:.15s;
+  padding:9px 12px; font-size:13.5px; text-decoration:none; color:var(--muted);
+  border-bottom:2px solid transparent; transition:.15s; white-space:nowrap;
 }
-nav.tabs a:hover{color:var(--ink-text);}
-nav.tabs a.active{color:var(--brass); border-bottom-color:var(--seal); font-weight:600;}
+nav.tabs a:hover{color:var(--brand-deep);}
+nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-weight:700;}
 
 @media (max-width:640px){
   nav.tabs{gap:0; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none;}
   nav.tabs::-webkit-scrollbar{display:none;}
-  nav.tabs a{padding:9px 10px; font-size:13px; white-space:nowrap;}
+  nav.tabs a{padding:9px 8px; font-size:12.5px;}
   .brand-sub{display:none;}
 }
 
@@ -90,99 +89,137 @@ nav.tabs a.active{color:var(--brass); border-bottom-color:var(--seal); font-weig
 .hero{padding:52px 0 28px;}
 .eyebrow{
   display:inline-flex; align-items:center; gap:8px;
-  font-size:12px; color:var(--brass); letter-spacing:.08em; margin-bottom:14px;
+  font-size:12px; color:var(--brand); letter-spacing:.08em; margin-bottom:14px; font-weight:600;
 }
-.eyebrow::before{content:''; width:16px; height:1px; background:var(--brass);}
-.hero h1{font-size:clamp(26px,4.4vw,38px); line-height:1.35; color:var(--ink-text);}
-.hero h1 em{color:var(--seal); font-style:normal;}
+.eyebrow::before{content:''; width:16px; height:1px; background:var(--brand);}
+.hero h1{font-size:clamp(26px,4.4vw,38px); line-height:1.35; color:var(--brand-deep);}
+.hero h1 em{color:var(--brand); font-style:normal;}
 .hero p{margin-top:14px; color:var(--muted); font-size:15px; line-height:1.7; max-width:60ch;}
 
 /* ---------- 계산기 패널 ---------- */
 .calc-panel{
-  background:var(--ink-soft); border:1px solid var(--line); border-radius:var(--radius);
-  padding:28px; margin:24px 0 40px;
+  background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
+  padding:28px; margin:24px 0 40px; box-shadow:0 2px 10px rgba(29,119,181,.06);
 }
 .field-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 20px;}
 .field{display:flex; flex-direction:column; gap:6px;}
 .field.full{grid-column:1 / -1;}
 .field label{font-size:13px; color:var(--muted);}
-.field .hint{font-size:11.5px; color:#5C6473; margin-top:2px;}
+.field .hint{font-size:11.5px; color:#7C93A6; margin-top:2px;}
 .field input[type=number], .field input[type=text], .field select{
-  background:var(--ink); border:1px solid var(--line); color:var(--ink-text);
+  background:var(--sky-bg); border:1px solid var(--border-strong); color:var(--text);
   padding:11px 12px; border-radius:var(--radius); font-size:15px; width:100%;
   font-family:inherit;
 }
-.field select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--brass) 50%),linear-gradient(135deg,var(--brass) 50%,transparent 50%); background-position:calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat;}
-.field input:focus, .field select:focus{outline:none; border-color:var(--brass);}
+.field select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--brand) 50%),linear-gradient(135deg,var(--brand) 50%,transparent 50%); background-position:calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat;}
+.field input:focus, .field select:focus{outline:none; border-color:var(--brand);}
 
 .radio-row{display:flex; gap:8px; flex-wrap:wrap;}
 .radio-row label{
-  border:1px solid var(--line); padding:8px 14px; border-radius:20px; font-size:13.5px;
-  color:var(--muted); cursor:pointer; transition:.15s;
+  border:1px solid var(--border-strong); padding:8px 14px; border-radius:20px; font-size:13.5px;
+  color:var(--muted); cursor:pointer; transition:.15s; background:var(--sky-bg);
 }
 .radio-row input{display:none;}
-.radio-row input:checked + span{color:var(--ink);}
-.radio-row label:has(input:checked){background:var(--brass); border-color:var(--brass); color:var(--ink);}
+.radio-row label:has(input:checked){background:var(--brand); border-color:var(--brand); color:#fff;}
 
 .calc-btn{
   margin-top:22px; width:100%; padding:15px; border:none; border-radius:var(--radius);
-  background:var(--seal); color:#F6F2E9; font-size:15.5px; font-weight:700;
+  background:var(--brand); color:#fff; font-size:15.5px; font-weight:700;
   cursor:pointer; letter-spacing:.02em; transition:.15s;
 }
-.calc-btn:hover{background:var(--seal-dim);}
+.calc-btn:hover{background:var(--brand-deep);}
 
-/* ---------- 결과 카드 (한지 톤 반전) ---------- */
+/* ---------- 결과 카드 ---------- */
 .result{
-  display:none; background:var(--paper); color:var(--paper-text);
+  display:none; background:var(--panel); color:var(--text);
   border-radius:var(--radius); margin-top:20px; padding:28px; position:relative;
-  border:1px solid var(--line-paper);
+  border:1px solid var(--border-strong);
 }
 .result.show{display:block;}
 .result .stamp{
   position:absolute; top:20px; right:22px; width:56px; height:56px; border-radius:50%;
-  border:2px solid var(--seal); color:var(--seal); display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--stamp); color:var(--stamp); display:flex; align-items:center; justify-content:center;
   font-family:'Noto Serif KR',serif; font-weight:900; font-size:12px; transform:rotate(8deg); text-align:center; line-height:1.2;
-  opacity:.85;
+  opacity:.85; background:var(--white);
 }
-.result h3{font-size:13px; color:#8A7A5E; letter-spacing:.06em; margin-bottom:6px;}
-.result .headline{font-family:'Noto Serif KR',serif; font-weight:900; font-size:clamp(28px,5vw,40px); margin-bottom:18px;}
-.result .breakdown{border-top:1px dashed var(--line-paper); padding-top:14px;}
+.result h3{font-size:13px; color:var(--brand); letter-spacing:.06em; margin-bottom:6px;}
+.result .headline{font-family:'Noto Serif KR',serif; font-weight:900; font-size:clamp(28px,5vw,40px); margin-bottom:18px; color:var(--brand-deep);}
+.result .breakdown{border-top:1px dashed var(--border-strong); padding-top:14px;}
 .result .row{display:flex; justify-content:space-between; padding:6px 0; font-size:14px;}
-.result .row .k{color:#6B6355;}
+.result .row .k{color:var(--muted);}
 .result .row .v{font-weight:600; font-variant-numeric:tabular-nums;}
-.result .row.total{border-top:1px solid var(--line-paper); margin-top:6px; padding-top:10px; font-size:16px;}
-.result .cite{font-size:11.5px; color:#8A7A5E; margin-top:16px; line-height:1.6; border-top:1px dashed var(--line-paper); padding-top:12px;}
-.result .cite a{color:var(--seal); text-decoration:underline;}
-.result .disclaimer{font-size:12px; color:#8A7A5E; margin-top:10px;}
+.result .row.total{border-top:1px solid var(--border-strong); margin-top:6px; padding-top:10px; font-size:16px;}
+.result .cite{font-size:11.5px; color:var(--muted); margin-top:16px; line-height:1.6; border-top:1px dashed var(--border-strong); padding-top:12px;}
+.result .cite a{color:var(--brand); text-decoration:underline;}
+.result .disclaimer{font-size:12px; color:var(--muted); margin-top:10px;}
+.result .compare-note{font-size:12px; color:var(--brand-deep); background:var(--panel-deep); padding:10px 12px; border-radius:var(--radius); margin-top:14px;}
 
 /* ---------- CTA (상담 전환) ---------- */
 .cta{
   margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;
-  background:var(--ink); border:1px solid var(--seal); border-radius:var(--radius); padding:18px 20px;
+  background:var(--brand-deep); border:1px solid var(--brand-deep); border-radius:var(--radius); padding:18px 20px;
 }
-.cta p{margin:0; font-size:14px; color:var(--ink-text); flex:1; min-width:200px;}
-.cta p b{color:var(--brass);}
+.cta p{margin:0; font-size:14px; color:#EAF4FC; flex:1; min-width:200px;}
+.cta p b{color:var(--brand-light);}
 .cta-btn{
-  padding:12px 20px; background:var(--brass); color:var(--ink); font-weight:700;
+  padding:12px 20px; background:#fff; color:var(--brand-deep); font-weight:700;
   border-radius:var(--radius); text-decoration:none; font-size:14px; white-space:nowrap;
 }
 .lead-form{display:none; margin-top:14px; gap:10px; flex-wrap:wrap;}
 .lead-form.show{display:flex;}
-.lead-form input{flex:1; min-width:140px; padding:11px 12px; border-radius:var(--radius); border:1px solid var(--line); background:var(--ink); color:var(--ink-text);}
-.lead-form button{padding:11px 18px; background:var(--seal); color:#F6F2E9; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer;}
+.lead-form input{flex:1; min-width:140px; padding:11px 12px; border-radius:var(--radius); border:1px solid var(--border-strong); background:#fff; color:var(--text);}
+.lead-form button{padding:11px 18px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer;}
 
 /* ---------- 콘텐츠 섹션 (SEO용 설명 텍스트) ---------- */
-.info-section{padding:36px 0 20px; border-top:1px solid var(--line);}
-.info-section h2{font-size:20px; margin-bottom:14px; color:var(--ink-text);}
+.info-section{padding:36px 0 20px; border-top:1px solid var(--border);}
+.info-section h2{font-size:20px; margin-bottom:14px; color:var(--brand-deep);}
 .info-section p, .info-section li{color:var(--muted); font-size:14.5px; line-height:1.85;}
-.info-section .law-ref{color:var(--brass); font-weight:600;}
+.info-section .law-ref{color:var(--brand); font-weight:600;}
 
 .related{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
 .related a{
-  border:1px solid var(--line); padding:10px 16px; border-radius:20px; text-decoration:none;
-  font-size:13.5px; color:var(--muted);
+  border:1px solid var(--border-strong); padding:10px 16px; border-radius:20px; text-decoration:none;
+  font-size:13.5px; color:var(--muted); background:var(--white);
 }
-.related a:hover{border-color:var(--brass); color:var(--brass);}
+.related a:hover{border-color:var(--brand); color:var(--brand);}
 
-footer.site{border-top:1px solid var(--line); padding:28px 0 60px; margin-top:20px;}
-footer.site p{font-size:12px; color:#5C6473; line-height:1.8;}
+/* ---------- 홈 허브 카드 ---------- */
+.hub-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.hub-card{
+  background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
+  padding:22px; text-decoration:none; display:block; transition:.15s; box-shadow:0 2px 10px rgba(29,119,181,.05);
+}
+.hub-card:hover{border-color:var(--brand); transform:translateY(-2px);}
+.hub-card h3{color:var(--brand-deep); font-size:17px; margin-bottom:8px;}
+.hub-card p{color:var(--muted); font-size:13.5px; line-height:1.6; margin:0;}
+.hub-card .tag{display:inline-block; font-size:10.5px; color:var(--brand); background:var(--panel); padding:2px 8px; border-radius:10px; margin-bottom:8px; font-weight:600;}
+@media (max-width:640px){.hub-grid{grid-template-columns:1fr;}}
+
+footer.site{border-top:1px solid var(--border); padding:28px 0 60px; margin-top:20px;}
+footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
+.footer-links{margin-top:10px; display:flex; gap:14px;}
+.footer-links a{color:var(--brand); text-decoration:underline; cursor:pointer; font-size:12px; background:none; border:none; padding:0; font-family:inherit;}
+
+/* ---------- 법적고지 모달 ---------- */
+.legal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(15,45,66,.55); z-index:200;
+  align-items:center; justify-content:center; padding:20px;
+}
+.legal-overlay.show{display:flex;}
+.legal-box{
+  background:var(--white); width:100%; max-width:520px; max-height:80vh; overflow-y:auto;
+  border-radius:var(--radius); box-shadow:0 20px 50px rgba(15,45,66,.3);
+}
+.legal-head{
+  display:flex; align-items:center; justify-content:space-between; padding:18px 22px;
+  border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--white);
+}
+.legal-head h3{font-size:16px; color:var(--brand-deep);}
+.legal-close{
+  background:none; border:none; font-size:22px; line-height:1; cursor:pointer; color:var(--muted); padding:4px;
+}
+.legal-close:hover{color:var(--brand);}
+.legal-body{padding:20px 22px 26px; font-size:13.5px; color:var(--muted); line-height:1.85;}
+.legal-body p{margin:0 0 12px;}
+.legal-body ul{padding-left:18px; margin:10px 0;}
+.legal-body li{margin-bottom:8px;}

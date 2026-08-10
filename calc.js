@@ -192,21 +192,140 @@ function calcInheritanceTax(p){
   };
 }
 
-/* ---------- 리드폼 처리 (Formspree 연동 자리 — foreign-worker-refund-app과 동일 패턴) ---------- */
-function initLeadForm(formEl, endpoint){
-  formEl.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = formEl.querySelector('button');
-    btn.textContent = '전송 중...'; btn.disabled = true;
-    try {
-      await fetch(endpoint, {
-        method: 'POST',
-        body: new FormData(formEl),
-        headers: { 'Accept': 'application/json' }
-      });
-      formEl.innerHTML = '<p style="color:#B8935B;font-size:14px;">신청 완료 — 확인 후 순차적으로 연락드립니다.</p>';
-    } catch (err) {
-      btn.textContent = '전송 실패, 다시 시도'; btn.disabled = false;
-    }
-  });
+/* -------------------------------------------------------------------------
+   5) 보유세 — 재산세 (지방세법 §111) + 종합부동산세 (종부세법 §8, §9)
+   ------------------------------------------------------------------------- */
+/* 재산세 표준세율 / 1주택 특례세율 (지방세법 시행규칙 별지 제59호의3서식) */
+const PROPERTY_TAX_STANDARD = [
+  { limit: 60000000,   rate: 0.001,  deduction: 0 },
+  { limit: 150000000,  rate: 0.0015, deduction: 30000 },
+  { limit: 300000000,  rate: 0.0025, deduction: 195000 },
+  { limit: Infinity,   rate: 0.004,  deduction: 570000 },
+];
+const PROPERTY_TAX_ONEHOUSE = [
+  { limit: 60000000,   rate: 0.0005, deduction: 0 },
+  { limit: 150000000,  rate: 0.001,  deduction: 30000 },
+  { limit: 300000000,  rate: 0.002,  deduction: 120000 },
+  { limit: Infinity,   rate: 0.0035, deduction: 420000 },
+];
+/* 종부세 세율표 (종부세법 §9①, 2026년 현행) */
+const COMP_TAX_UNDER2 = [
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 900000 },
+  { limit: 1200000000,  rate: 0.010,  deduction: 2700000 },
+  { limit: 2500000000,  rate: 0.013,  deduction: 6300000 },
+  { limit: 5000000000,  rate: 0.015,  deduction: 11300000 },
+  { limit: 9400000000,  rate: 0.020,  deduction: 36300000 },
+  { limit: Infinity,    rate: 0.027,  deduction: 101100000 },
+];
+const COMP_TAX_OVER3 = [
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 900000 },
+  { limit: 1200000000,  rate: 0.010,  deduction: 2700000 },
+  { limit: 2500000000,  rate: 0.020,  deduction: 15300000 },
+  { limit: 5000000000,  rate: 0.030,  deduction: 40300000 },
+  { limit: 9400000000,  rate: 0.040,  deduction: 90300000 },
+  { limit: Infinity,    rate: 0.050,  deduction: 184300000 },
+];
+
+function calcHoldingTax(p){
+  // 1) 재산세
+  const fmvRatio = p.isOneHouse
+    ? (p.publicPrice <= 300000000 ? 0.43 : p.publicPrice <= 600000000 ? 0.44 : 0.45)
+    : 0.60;
+  const ptBase = p.publicPrice * fmvRatio;
+  const ptBrackets = p.isOneHouse ? PROPERTY_TAX_ONEHOUSE : PROPERTY_TAX_STANDARD;
+  const propertyTax = progressiveTax(ptBase, ptBrackets);
+  const localEduTaxPT = propertyTax * 0.2; // 지방교육세 (재산세액의 20%)
+  const urbanAreaTax = p.isUrbanArea ? ptBase * 0.0014 : 0; // 도시지역분
+  const propertyTaxTotal = propertyTax + localEduTaxPT + urbanAreaTax;
+
+  // 2) 종합부동산세 (현행법: 1주택 12억 공제, 그 외 9억 공제)
+  const deduction = p.isOneHouse ? 1200000000 : 900000000;
+  const ctBase = clamp0(p.publicPrice - deduction) * 0.60; // 공정시장가액비율 60%
+  const ctBrackets = p.houseCount >= 3 ? COMP_TAX_OVER3 : COMP_TAX_UNDER2;
+  const compTax = progressiveTax(ctBase, ctBrackets);
+  const ruralTaxCT = compTax * 0.2; // 농어촌특별세 (종부세액의 20%)
+  const compTaxTotal = compTax + ruralTaxCT;
+
+  const total = propertyTaxTotal + compTaxTotal;
+
+  return {
+    fmvRatio, ptBase, propertyTax, localEduTaxPT, urbanAreaTax, propertyTaxTotal,
+    deduction, ctBase, compTax, ruralTaxCT, compTaxTotal, total,
+    rows: [
+      ['[재산세] 과세표준', won(ptBase)],
+      ['[재산세] 산출세액', won(propertyTax)],
+      ['[재산세] 지방교육세 (20%)', won(localEduTaxPT)],
+      ['[재산세] 도시지역분', won(urbanAreaTax)],
+      ['[종부세] 공제 후 과세표준', won(ctBase)],
+      ['[종부세] 산출세액', won(compTax)],
+      ['[종부세] 농어촌특별세 (20%)', won(ruralTaxCT)],
+    ]
+  };
 }
+
+/* -------------------------------------------------------------------------
+   6) 상속지분 — 법정상속분 (민법 §1009)
+   ------------------------------------------------------------------------- */
+function calcInheritanceShare(p){
+  const childShare = 1;
+  const spouseShare = p.hasSpouse ? 1.5 : 0;
+  const totalUnits = spouseShare + (p.childCount * childShare);
+  const results = [];
+  if (p.hasSpouse) {
+    results.push(['배우자', spouseShare, spouseShare / totalUnits]);
+  }
+  for (let i = 1; i <= p.childCount; i++) {
+    results.push([`자녀 ${i}`, childShare, childShare / totalUnits]);
+  }
+  return {
+    totalUnits, results,
+    rows: results.map(([name, unit, ratio]) => [
+      `${name} (지분 ${unit})`, (ratio * 100).toFixed(2) + '%'
+    ])
+  };
+}
+
+/* -------------------------------------------------------------------------
+   7) 등기비용 — 취득세 + 국민주택채권 손실분 + 법무사 정액보수
+   ------------------------------------------------------------------------- */
+function calcRegistrationCost(p){
+  // 취득세는 기존 calcAcquisitionTax 재사용
+  const acq = calcAcquisitionTax({
+    acquireType: p.acquireType, price: p.price, houseCount: p.houseCount,
+    exceedsArea85: p.exceedsArea85, isAdjustedArea: p.isAdjustedArea,
+  });
+  // 국민주택채권: 매입금액은 시가표준액 구간·지역별로 상이해 사용자가 직접 입력
+  const bondLoss = p.bondAmount * (p.bondDiscountRate / 100);
+  // 법무사 보수기준 §25: 취득세신고대행 5만 + 채권매입대행 4만 + 기타업무대행 4만
+  const legalFeeBase = 50000 + 40000 + 40000;
+  const registrationStampFee = 15000; // 대법원등기 수입증지 (소유권이전, 통상 기준)
+  const total = acq.total + bondLoss + legalFeeBase + registrationStampFee;
+
+  return {
+    acq, bondLoss, legalFeeBase, registrationStampFee, total,
+    rows: [
+      ['취득세·지방교육세·농특세', won(acq.total)],
+      ['국민주택채권 매입 손실분', won(bondLoss)],
+      ['법무사 정액보수 (법무사보수기준 §25)', won(legalFeeBase)],
+      ['등기신청수수료 (수입증지)', won(registrationStampFee)],
+    ]
+  };
+}
+
+/* ---------- 법적고지 모달 ---------- */
+function openLegalModal(){
+  const el = document.getElementById('legalOverlay');
+  if (el) el.classList.add('show');
+}
+function closeLegalModal(){
+  const el = document.getElementById('legalOverlay');
+  if (el) el.classList.remove('show');
+}
+document.addEventListener('click', function(e){
+  if (e.target && e.target.id === 'legalOverlay') closeLegalModal();
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeLegalModal();
+});

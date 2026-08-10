@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>취득세 계산기 2026 | 전주 세무회계 아진</title>
-<meta name="description" content="매매·증여·상속 취득 원인과 조정대상지역, 보유주택수를 반영해 취득세·지방교육세·농어촌특별세를 계산합니다.">
-<link rel="canonical" href="https://taxajin.com/acquisition.html">
+<title>등기비용 계산기 2026 (취득세+법무사비+채권) | 전주 세무회계 아진</title>
+<meta name="description" content="취득세, 국민주택채권 매입 손실분, 법무사 정액보수까지 등기 이전 시 실제 드는 비용을 한 번에 계산합니다.">
+<link rel="canonical" href="https://taxajin.com/registration-cost.html">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,24 +18,24 @@
     </a>
     <nav class="tabs">
       <a href="transfer.html">양도소득세</a>
-      <a href="acquisition.html" class="active">취득세</a>
+      <a href="acquisition.html">취득세</a>
       <a href="gift.html">증여세</a>
       <a href="inheritance.html">상속세</a>
       <a href="holding-tax.html">보유세</a>
       <a href="inheritance-share.html">상속지분</a>
-      <a href="registration-cost.html">등기비용</a>
+      <a href="registration-cost.html" class="active">등기비용</a>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
   <section class="hero">
-    <span class="eyebrow">부동산 취득세</span>
-    <h1>취득세 <em>계산기</em></h1>
-    <p>취득 원인(매매·증여·상속)과 조정대상지역 여부, 보유주택 수를 반영해 취득세·지방교육세·농어촌특별세를 한 번에 계산합니다.</p>
+    <span class="eyebrow">등기 이전 비용</span>
+    <h1>등기비용 <em>계산기</em></h1>
+    <p>취득세뿐 아니라 국민주택채권 매입 손실분, 법무사 정액보수, 등기신청수수료까지 등기 이전에 실제 드는 비용을 한 번에 계산합니다.</p>
   </section>
 
-  <form class="calc-panel" id="form-acq">
+  <form class="calc-panel" id="form-reg">
     <div class="field-grid">
       <div class="field full">
         <label>취득 원인</label>
@@ -47,11 +47,11 @@
       </div>
       <div class="field">
         <label>취득가액 (또는 시가인정액, 원)</label>
-        <input type="number" id="a-price" placeholder="예: 600000000" required>
+        <input type="number" id="r-price" placeholder="예: 650000000" required>
       </div>
       <div class="field">
-        <label>취득 후 보유주택 수 (세대 기준)</label>
-        <input type="number" id="a-houseCount" value="1" min="1">
+        <label>취득 후 보유주택 수</label>
+        <input type="number" id="r-houseCount" value="1" min="1">
       </div>
       <div class="field">
         <label>전용면적 85㎡ 초과 여부</label>
@@ -61,46 +61,55 @@
         </div>
       </div>
       <div class="field">
-        <label>조정대상지역 내 부동산인가요?</label>
+        <label>조정대상지역 여부</label>
         <div class="radio-row">
           <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
           <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
         </div>
       </div>
+      <div class="field">
+        <label>국민주택채권 매입금액 (원)</label>
+        <input type="number" id="r-bondAmount" placeholder="예: 5000000">
+        <span class="hint">지역·시가표준액별 매입률표는 주택도시기금(nhuf.molit.go.kr)에서 확인</span>
+      </div>
+      <div class="field">
+        <label>채권 즉시매도 할인율 (%)</label>
+        <input type="number" id="r-bondDiscountRate" placeholder="예: 16" step="0.01">
+        <span class="hint">매일 변동 — 은행 채권할인 창구 또는 주택도시기금 고시금리 확인 후 입력</span>
+      </div>
     </div>
-    <button type="submit" class="calc-btn">취득세 계산하기</button>
+    <button type="submit" class="calc-btn">등기비용 계산하기</button>
   </form>
 
-  <div class="result" id="result-acq">
+  <div class="result" id="result-reg">
     <div class="stamp">계산<br>완료</div>
-    <h3>예상 납부세액</h3>
-    <div class="headline" id="a-total">0원</div>
-    <div class="breakdown" id="a-breakdown"></div>
-    <p class="cite">근거: 지방세법 §11(취득세 기본세율), §13의2(다주택 중과), 지방교육세법, 농어촌특별세법</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 생애최초 감면, 일시적 2주택 특례, 지방 저가주택 예외 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
+    <h3>예상 등기비용 총액</h3>
+    <div class="headline" id="r-total">0원</div>
+    <div class="breakdown" id="r-breakdown"></div>
+    <p class="cite">근거: 지방세법 §11(취득세), 법무사 보수기준 §25(정액보수), 주택도시기금법 §8(국민주택채권)</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 법무사 사무소별 상담료·교통비·일당은 별도이며, 국민주택채권 할인율은 매일 변동하므로 실제 매입 시점 기준으로 다시 확인해야 합니다.</p>
   </div>
 
   <div class="cta">
-    <p>다주택 중과·감면 특례 적용 여부가 헷갈린다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
+    <p>정확한 채권 매입금액 산정이나 취득세 절세 방안은 <b>세무사 상담</b>으로 확인해보세요.</p>
     <a class="cta-btn" href="tel:0000000000">전화 상담</a>
   </div>
 
   <section class="info-section">
-    <h2>취득세, 이렇게 계산됩니다</h2>
-    <p>주택 유상취득 시 기본세율은 6억원 이하 1%, 9억원 초과 3%이며 그 사이 구간은 <span class="law-ref">지방세법 §11</span>의 산식으로 계산합니다. 조정대상지역 내 2주택은 8%, 3주택 이상은 12%로 중과되고, 증여취득은 3.5%(조정지역 3억원 이상 12%), 상속취득은 2.8%가 적용됩니다. 여기에 지방교육세와 전용 85㎡ 초과 시 농어촌특별세가 추가됩니다.</p>
+    <h2>등기비용, 이렇게 구성됩니다</h2>
+    <p>등기 이전 비용은 취득세·지방교육세·농특세(<span class="law-ref">지방세법 §11</span>) 외에도 등기 신청 시 의무적으로 매입해야 하는 국민주택채권(<span class="law-ref">주택도시기금법 §8</span>)을 즉시 매도할 때 발생하는 할인 손실, 법무사 정액보수(취득세신고대행 5만원+채권매입대행 4만원+기타업무대행 4만원, <span class="law-ref">법무사 보수기준 §25</span>), 등기신청수수료(대법원등기 수입증지)로 구성됩니다.</p>
   </section>
 
   <div class="related">
-    <a href="transfer.html">→ 양도소득세 계산기</a>
-    <a href="gift.html">→ 증여세 계산기</a>
-    <a href="inheritance.html">→ 상속세 계산기</a>
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="holding-tax.html">→ 보유세 계산기</a>
   </div>
 </main>
 
 <footer class="site">
   <div class="wrap">
     <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사(59기, 등록번호 54437호)<br>
-    본 계산기는 참고용 간이 계산 결과이며, 실제 세액은 개별 사실관계에 따라 달라질 수 있습니다.</p>
+    본 계산기는 참고용 간이 계산 결과이며, 실제 비용은 지역·시점·사무소에 따라 달라질 수 있습니다.</p>
     <div class="footer-links">
       <a onclick="openLegalModal()">법적고지</a>
     </div>
@@ -109,22 +118,24 @@
 
 <script src="calc.js"></script>
 <script>
-document.getElementById('form-acq').addEventListener('submit', function(e){
+document.getElementById('form-reg').addEventListener('submit', function(e){
   e.preventDefault();
   const p = {
     acquireType: document.querySelector('input[name=acquireType]:checked').value,
-    price: Number(document.getElementById('a-price').value || 0),
-    houseCount: Number(document.getElementById('a-houseCount').value || 1),
+    price: Number(document.getElementById('r-price').value || 0),
+    houseCount: Number(document.getElementById('r-houseCount').value || 1),
     exceedsArea85: document.querySelector('input[name=exceedsArea85]:checked').value === '1',
     isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+    bondAmount: Number(document.getElementById('r-bondAmount').value || 0),
+    bondDiscountRate: Number(document.getElementById('r-bondDiscountRate').value || 0),
   };
-  const r = calcAcquisitionTax(p);
-  document.getElementById('a-total').textContent = won(r.total);
-  document.getElementById('a-breakdown').innerHTML = r.rows.map(([k,v]) =>
+  const r = calcRegistrationCost(p);
+  document.getElementById('r-total').textContent = won(r.total);
+  document.getElementById('r-breakdown').innerHTML = r.rows.map(([k,v]) =>
     `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
   ).join('') + `<div class="row total"><span class="k">합계</span><span class="v">${won(r.total)}</span></div>`;
-  document.getElementById('result-acq').classList.add('show');
-  document.getElementById('result-acq').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('result-reg').classList.add('show');
+  document.getElementById('result-reg').scrollIntoView({behavior:'smooth', block:'center'});
 });
 </script>
 
