@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>증여세 계산기 2026 | 전주 세무회계 아진</title>
+<meta name="description" content="수증자와의 관계별 증여재산공제(배우자 6억, 직계존비속 5천만원 등)를 반영해 증여세 과세표준과 산출세액을 계산합니다.">
+<link rel="canonical" href="https://taxajin.com/gift.html">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="site-bar">
+    <a class="brand" href="index.html">
+      <span class="seal-mark">阿進</span>
+      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+    </a>
+    <nav class="tabs">
+      <a href="transfer.html">양도소득세</a>
+      <a href="acquisition.html">취득세</a>
+      <a href="gift.html" class="active">증여세</a>
+      <a href="inheritance.html">상속세</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">증여세</span>
+    <h1>증여세 <em>계산기</em></h1>
+    <p>수증자와 증여자의 관계에 따라 증여재산공제(상증세법 §53)가 다르게 적용됩니다. 10년간 합산 기준이므로 과거 증여 이력이 있다면 함께 입력하세요.</p>
+  </section>
+
+  <form class="calc-panel" id="form-gift">
+    <div class="field-grid">
+      <div class="field">
+        <label>증여재산가액 (원)</label>
+        <input type="number" id="g-giftValue" placeholder="예: 300000000" required>
+      </div>
+      <div class="field">
+        <label>수증자와의 관계</label>
+        <select id="g-relation">
+          <option value="spouse">배우자</option>
+          <option value="lineal_adult" selected>직계존비속 (성년)</option>
+          <option value="lineal_minor">직계존비속 (미성년)</option>
+          <option value="other_relative">기타친족</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>최근 10년 내 동일인으로부터 받은 증여 중 공제받은 금액 (원)</label>
+        <input type="number" id="g-priorUsed" value="0">
+        <span class="hint">10년 합산 기준 (§53) — 이전에 공제받은 금액만큼 이번 공제한도에서 차감됩니다</span>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">증여세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-gift">
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="g-total">0원</div>
+    <div class="breakdown" id="g-breakdown"></div>
+    <p class="cite">근거: 상증세법 §53(증여재산공제), §56(세율, §26 준용), §69(신고세액공제)</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 혼인·출산 증여재산공제(§53의2, 최대 1억) 등 별도 특례는 반영되어 있지 않습니다.</p>
+  </div>
+
+  <div class="cta">
+    <p>혼인·출산 공제나 부동산 시가 평가가 애매하다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
+    <a class="cta-btn" id="g-cta-open" href="#">무료 상담 신청</a>
+  </div>
+  <form class="lead-form" id="g-lead-form">
+    <input type="text" name="name" placeholder="성함" required>
+    <input type="tel" name="phone" placeholder="연락처" required>
+    <input type="hidden" name="source" value="gift-tax-calculator">
+    <button type="submit">신청</button>
+  </form>
+
+  <section class="info-section">
+    <h2>증여세, 이렇게 계산됩니다</h2>
+    <p>증여재산가액에서 관계별 공제(배우자 6억원, 직계존비속 5천만원·미성년 2천만원, 기타친족 1천만원, <span class="law-ref">상증세법 §53</span>)를 뺀 과세표준에 10~50% 5단계 누진세율(<span class="law-ref">§56, §26</span>)을 적용합니다. 기한 내 신고 시 산출세액의 3%를 신고세액공제(<span class="law-ref">§69</span>)로 추가로 뺍니다.</p>
+  </section>
+
+  <div class="related">
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="inheritance.html">→ 상속세 계산기</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사(59기, 등록번호 54437호)<br>
+    본 계산기는 참고용 간이 계산 결과이며, 실제 세액은 개별 사실관계에 따라 달라질 수 있습니다.</p>
+  </div>
+</footer>
+
+<script src="calc.js"></script>
+<script>
+document.getElementById('form-gift').addEventListener('submit', function(e){
+  e.preventDefault();
+  const p = {
+    giftValue: Number(document.getElementById('g-giftValue').value || 0),
+    relation: document.getElementById('g-relation').value,
+    priorUsed: Number(document.getElementById('g-priorUsed').value || 0),
+  };
+  const r = calcGiftTax(p);
+  document.getElementById('g-total').textContent = won(r.total);
+  document.getElementById('g-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">최종 납부세액</span><span class="v">${won(r.total)}</span></div>`;
+  document.getElementById('result-gift').classList.add('show');
+  document.getElementById('result-gift').scrollIntoView({behavior:'smooth', block:'center'});
+});
+document.getElementById('g-cta-open').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('g-lead-form').classList.add('show');
+});
+initLeadForm(document.getElementById('g-lead-form'), 'https://formspree.io/f/YOUR_FORM_ID');
+</script>
+</body>
+</html>

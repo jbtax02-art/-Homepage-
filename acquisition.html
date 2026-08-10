@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>취득세 계산기 2026 | 전주 세무회계 아진</title>
+<meta name="description" content="매매·증여·상속 취득 원인과 조정대상지역, 보유주택수를 반영해 취득세·지방교육세·농어촌특별세를 계산합니다.">
+<link rel="canonical" href="https://taxajin.com/acquisition.html">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="site-bar">
+    <a class="brand" href="index.html">
+      <span class="seal-mark">阿進</span>
+      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+    </a>
+    <nav class="tabs">
+      <a href="transfer.html">양도소득세</a>
+      <a href="acquisition.html" class="active">취득세</a>
+      <a href="gift.html">증여세</a>
+      <a href="inheritance.html">상속세</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">부동산 취득세</span>
+    <h1>취득세 <em>계산기</em></h1>
+    <p>취득 원인(매매·증여·상속)과 조정대상지역 여부, 보유주택 수를 반영해 취득세·지방교육세·농어촌특별세를 한 번에 계산합니다.</p>
+  </section>
+
+  <form class="calc-panel" id="form-acq">
+    <div class="field-grid">
+      <div class="field full">
+        <label>취득 원인</label>
+        <div class="radio-row">
+          <label><input type="radio" name="acquireType" value="trade" checked><span>매매(유상취득)</span></label>
+          <label><input type="radio" name="acquireType" value="gift"><span>증여</span></label>
+          <label><input type="radio" name="acquireType" value="inherit"><span>상속</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label>취득가액 (또는 시가인정액, 원)</label>
+        <input type="number" id="a-price" placeholder="예: 600000000" required>
+      </div>
+      <div class="field">
+        <label>취득 후 보유주택 수 (세대 기준)</label>
+        <input type="number" id="a-houseCount" value="1" min="1">
+      </div>
+      <div class="field">
+        <label>전용면적 85㎡ 초과 여부</label>
+        <div class="radio-row">
+          <label><input type="radio" name="exceedsArea85" value="1"><span>예</span></label>
+          <label><input type="radio" name="exceedsArea85" value="0" checked><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label>조정대상지역 내 부동산인가요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
+          <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">취득세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-acq">
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="a-total">0원</div>
+    <div class="breakdown" id="a-breakdown"></div>
+    <p class="cite">근거: 지방세법 §11(취득세 기본세율), §13의2(다주택 중과), 지방교육세법, 농어촌특별세법</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 생애최초 감면, 일시적 2주택 특례, 지방 저가주택 예외 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
+  </div>
+
+  <div class="cta">
+    <p>다주택 중과·감면 특례 적용 여부가 헷갈린다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
+    <a class="cta-btn" id="a-cta-open" href="#">무료 상담 신청</a>
+  </div>
+  <form class="lead-form" id="a-lead-form">
+    <input type="text" name="name" placeholder="성함" required>
+    <input type="tel" name="phone" placeholder="연락처" required>
+    <input type="hidden" name="source" value="acquisition-tax-calculator">
+    <button type="submit">신청</button>
+  </form>
+
+  <section class="info-section">
+    <h2>취득세, 이렇게 계산됩니다</h2>
+    <p>주택 유상취득 시 기본세율은 6억원 이하 1%, 9억원 초과 3%이며 그 사이 구간은 <span class="law-ref">지방세법 §11</span>의 산식으로 계산합니다. 조정대상지역 내 2주택은 8%, 3주택 이상은 12%로 중과되고, 증여취득은 3.5%(조정지역 3억원 이상 12%), 상속취득은 2.8%가 적용됩니다. 여기에 지방교육세와 전용 85㎡ 초과 시 농어촌특별세가 추가됩니다.</p>
+  </section>
+
+  <div class="related">
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
+    <a href="inheritance.html">→ 상속세 계산기</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사(59기, 등록번호 54437호)<br>
+    본 계산기는 참고용 간이 계산 결과이며, 실제 세액은 개별 사실관계에 따라 달라질 수 있습니다.</p>
+  </div>
+</footer>
+
+<script src="calc.js"></script>
+<script>
+document.getElementById('form-acq').addEventListener('submit', function(e){
+  e.preventDefault();
+  const p = {
+    acquireType: document.querySelector('input[name=acquireType]:checked').value,
+    price: Number(document.getElementById('a-price').value || 0),
+    houseCount: Number(document.getElementById('a-houseCount').value || 1),
+    exceedsArea85: document.querySelector('input[name=exceedsArea85]:checked').value === '1',
+    isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+  };
+  const r = calcAcquisitionTax(p);
+  document.getElementById('a-total').textContent = won(r.total);
+  document.getElementById('a-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">합계</span><span class="v">${won(r.total)}</span></div>`;
+  document.getElementById('result-acq').classList.add('show');
+  document.getElementById('result-acq').scrollIntoView({behavior:'smooth', block:'center'});
+});
+document.getElementById('a-cta-open').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('a-lead-form').classList.add('show');
+});
+initLeadForm(document.getElementById('a-lead-form'), 'https://formspree.io/f/YOUR_FORM_ID');
+</script>
+</body>
+</html>

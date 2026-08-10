@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상속세 계산기 2026 | 전주 세무회계 아진</title>
+<meta name="description" content="배우자 유무와 상속재산가액을 입력하면 일괄공제 5억원, 배우자상속공제(5억~30억)를 반영한 상속세 예상 세액을 계산합니다.">
+<link rel="canonical" href="https://taxajin.com/inheritance.html">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="site-bar">
+    <a class="brand" href="index.html">
+      <span class="seal-mark">阿進</span>
+      <span><span class="brand-name">TAXAJIN</span><span class="brand-sub">세무회계 아진 · 전주</span></span>
+    </a>
+    <nav class="tabs">
+      <a href="transfer.html">양도소득세</a>
+      <a href="acquisition.html">취득세</a>
+      <a href="gift.html">증여세</a>
+      <a href="inheritance.html" class="active">상속세</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">상속세</span>
+    <h1>상속세 <em>계산기</em></h1>
+    <p>상속재산가액과 배우자 유무·상속분을 입력하면 일괄공제(§21)와 배우자상속공제(§19)를 반영한 예상 세액을 계산합니다.</p>
+  </section>
+
+  <form class="calc-panel" id="form-inherit">
+    <div class="field-grid">
+      <div class="field">
+        <label>상속재산가액 (채무·장례비 차감 후, 원)</label>
+        <input type="number" id="i-totalEstate" placeholder="예: 1500000000" required>
+      </div>
+      <div class="field">
+        <label>배우자가 생존해 있나요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="hasSpouse" value="1" checked><span>예</span></label>
+          <label><input type="radio" name="hasSpouse" value="0"><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field full">
+        <label>배우자의 실제 상속분 (원)</label>
+        <input type="number" id="i-spouseShare" value="0">
+        <span class="hint">배우자상속공제는 최소 5억원, 최대 30억원 한도로 실제 상속받은 금액 기준 적용 (§19)</span>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">상속세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-inherit">
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="i-total">0원</div>
+    <div class="breakdown" id="i-breakdown"></div>
+    <p class="cite">근거: 상증세법 §19(배우자상속공제), §21(일괄공제), §26(세율), §69(신고세액공제)</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 인적공제·금융재산공제·동거주택상속공제(최대 6억)·가업상속공제 등은 반영되어 있지 않으며, 이런 공제가 있는 경우 실제 세액은 더 낮아질 수 있습니다.</p>
+  </div>
+
+  <div class="cta">
+    <p>배우자공제·동거주택공제 등 추가 공제 가능 여부는 <b>세무사 상담</b>으로 꼼꼼히 확인하세요.</p>
+    <a class="cta-btn" id="i-cta-open" href="#">무료 상담 신청</a>
+  </div>
+  <form class="lead-form" id="i-lead-form">
+    <input type="text" name="name" placeholder="성함" required>
+    <input type="tel" name="phone" placeholder="연락처" required>
+    <input type="hidden" name="source" value="inheritance-tax-calculator">
+    <button type="submit">신청</button>
+  </form>
+
+  <section class="info-section">
+    <h2>상속세, 이렇게 계산됩니다</h2>
+    <p>상속재산가액에서 일괄공제 5억원(<span class="law-ref">§21</span>, 인적공제 합계와 택일)과 배우자상속공제 최소 5억~최대 30억원(<span class="law-ref">§19</span>)을 뺀 과세표준에 10~50% 5단계 누진세율(<span class="law-ref">§26</span>)을 적용합니다. 배우자와 자녀가 있는 일반적인 가정은 상속재산 10억원까지는 상속세가 발생하지 않는 경우가 많습니다.</p>
+  </section>
+
+  <div class="related">
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사(59기, 등록번호 54437호)<br>
+    본 계산기는 참고용 간이 계산 결과이며, 실제 세액은 개별 사실관계에 따라 달라질 수 있습니다.</p>
+  </div>
+</footer>
+
+<script src="calc.js"></script>
+<script>
+document.getElementById('form-inherit').addEventListener('submit', function(e){
+  e.preventDefault();
+  const p = {
+    totalEstate: Number(document.getElementById('i-totalEstate').value || 0),
+    hasSpouse: document.querySelector('input[name=hasSpouse]:checked').value === '1',
+    spouseShare: Number(document.getElementById('i-spouseShare').value || 0),
+  };
+  const r = calcInheritanceTax(p);
+  document.getElementById('i-total').textContent = won(r.total);
+  document.getElementById('i-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">최종 납부세액</span><span class="v">${won(r.total)}</span></div>`;
+  document.getElementById('result-inherit').classList.add('show');
+  document.getElementById('result-inherit').scrollIntoView({behavior:'smooth', block:'center'});
+});
+document.getElementById('i-cta-open').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('i-lead-form').classList.add('show');
+});
+initLeadForm(document.getElementById('i-lead-form'), 'https://formspree.io/f/YOUR_FORM_ID');
+</script>
+</body>
+</html>
