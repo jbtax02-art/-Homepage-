@@ -17,7 +17,7 @@
 <header class="site">
   <div class="site-bar">
     <a class="brand" href="index.html">
-      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img">
+      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="logo-fallback-text" style="display:none; font-family:'Noto Serif KR',serif; font-weight:700; font-size:19px; color:var(--brand-deep);">세무회계 아진</span>
     </a>
     <nav class="tabs">
       <a href="transfer.html">양도소득세</a>
@@ -110,15 +110,9 @@
 
   <div class="cta">
     <p>배우자공제·동거주택공제 등 추가 공제 가능 여부는 <b>세무사 상담</b>으로 꼼꼼히 확인하세요.</p>
-    <a class="cta-btn" id="i-cta-open" href="#">상담 신청</a>
+    <a class="cta-btn" href="https://naver.me/FFqdGqaX" target="_blank" rel="noopener">상담 신청</a>
     <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
-
-  <form class="lead-form" id="i-lead-form">
-    <input type="text" name="name" placeholder="성함 (선택)">
-    <input type="tel" name="phone" placeholder="연락처" required>
-    <button type="submit">신청</button>
-  </form>
 
   <section class="info-section">
     <h2>상속세, 이렇게 계산됩니다</h2>
@@ -134,11 +128,11 @@
 
 <footer class="site">
   <div class="wrap">
-    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사(59기, 등록번호 54437호)<br>
+    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>
     본 계산기는 참고용 간이 계산 결과이며, 실제 세액은 개별 사실관계에 따라 달라질 수 있습니다.</p>
-    <div class="footer-links">
-      <a onclick="openLegalModal()">법적고지</a>
-    </div>
+      <span style="display:block; margin-top:10px; font-size:11px; color:#8A93A3; line-height:1.7;">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다. 본 사이트의 내용과 기능은 사전 고지 없이 변경되거나 중단될 수 있습니다.
+      </span>
   </div>
 </footer>
 
@@ -169,26 +163,6 @@ document.getElementById('form-inherit').addEventListener('submit', function(e){
   document.getElementById('result-inherit').classList.add('show');
   document.getElementById('result-inherit').scrollIntoView({behavior:'smooth', block:'center'});
 });
-initLeadCapture('i', '상속세');
 </script>
-
-<div class="legal-overlay" id="legalOverlay">
-  <div class="legal-box">
-    <div class="legal-head">
-      <h3>법적 고지 및 책임 한계</h3>
-      <button type="button" class="legal-close" onclick="closeLegalModal()">&times;</button>
-    </div>
-    <div class="legal-body">
-      <p>본 계산기는 이용자의 편의를 돕기 위해 제공하는 참고용 도구이며, 입력한 값을 바탕으로 산출한 간이 계산 결과를 보여줍니다. 이 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않으며, 실제 신고·납부·계약 전에는 반드시 세무사 등 전문가의 확인을 거치시기 바랍니다.</p>
-      <ul>
-        <li>계산 결과는 입력값과 계산 시점의 세율·공제 기준에 따른 것으로, 법령 개정이나 개별 사실관계(특례, 감면, 세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있습니다.</li>
-        <li>세무회계 아진은 본 계산기 이용으로 발생하는 직접적·간접적 손해에 대해 책임을 지지 않습니다.</li>
-        <li>계산 결과를 바탕으로 한 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.</li>
-        <li>본 사이트의 내용과 기능은 사전 고지 없이 변경되거나 중단될 수 있습니다.</li>
-      </ul>
-      <p>정확한 상담이 필요하시면 세무회계 아진(전주시 덕진구 가인로 18 법조정문빌딩 103호)으로 문의해주세요.</p>
-    </div>
-  </div>
-</div>
 </body>
 </html>

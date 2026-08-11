@@ -26,54 +26,6 @@ const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
 const wonMinus = n => Math.round(n) === 0 ? won(0) : ('-' + won(n));
 const clamp0 = n => Math.max(0, n);
 
-/* ---------- 상담 신청(리드캡처) — 구글 Apps Script 웹앱으로 전송 ----------
-   JB: 구글시트 + Apps Script 배포 후 발급받은 웹앱 URL을 아래에 붙여넣으세요.
-   예: 'https://script.google.com/macros/s/AKfycb.../exec'                */
-const LEAD_ENDPOINT = 'YOUR_APPS_SCRIPT_WEB_APP_URL';
-
-function initLeadCapture(prefix, calculatorName){
-  const openBtn = document.getElementById(prefix + '-cta-open');
-  const form = document.getElementById(prefix + '-lead-form');
-  if (!openBtn || !form) return;
-
-  openBtn.addEventListener('click', function(e){
-    e.preventDefault();
-    form.classList.add('show');
-  });
-
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
-    const btn = form.querySelector('button');
-    const nameEl = form.querySelector('[name=name]');
-    const phoneEl = form.querySelector('[name=phone]');
-    const totalEl = document.getElementById(prefix + '-total');
-
-    if (LEAD_ENDPOINT === 'YOUR_APPS_SCRIPT_WEB_APP_URL') {
-      alert('아직 상담 신청 접수 주소가 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
-      return;
-    }
-
-    btn.disabled = true; btn.textContent = '전송 중...';
-    try {
-      await fetch(LEAD_ENDPOINT, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          calculator: calculatorName,
-          name: nameEl ? nameEl.value : '',
-          phone: phoneEl ? phoneEl.value : '',
-          summary: totalEl ? ('예상 세액 ' + totalEl.textContent) : '',
-          url: location.href,
-        })
-      });
-      form.innerHTML = '<p style="color:#1D77B5;font-size:14px;">신청 완료 — 확인 후 순차적으로 연락드립니다.</p>';
-    } catch (err) {
-      btn.disabled = false; btn.textContent = '전송 실패, 다시 시도';
-    }
-  });
-}
-
 /* ---------- 금액 입력창 천단위 콤마 자동 포맷 ---------- */
 function attachThousands(el){
   if (!el) return;
@@ -208,10 +160,12 @@ function calcTransferTax(p){
   const isMultiHouseHeavy = p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !p.isOneHouse;
 
   let deductRate = 0, specialDeduction = 0, taxBase, capitalGainsTax, effectiveRatePct;
+  let surchargeAddRate = null, nonbizExcluded = false;
 
   if (isMultiHouseHeavy) {
     // 다주택 중과: 장특공제 배제, 과세표준 = 양도차익 - 기본공제만
     const addRate = p.houseCount === 2 ? settings.surcharge2 : settings.surcharge3;
+    surchargeAddRate = addRate;
     const surchargeBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + addRate}));
     taxBase = gainAfterBasic;
     capitalGainsTax = progressiveTax(taxBase, surchargeBrackets);
@@ -219,6 +173,7 @@ function calcTransferTax(p){
     effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
   } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
     // 2028년 이후: 비사업용토지 장특공제 완전 배제 + 중과세율 +20%p (개편안 §95④, §104①)
+    nonbizExcluded = true;
     taxBase = gainAfterBasic;
     const nonbizBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.20}));
     capitalGainsTax = progressiveTax(taxBase, nonbizBrackets);
@@ -276,8 +231,40 @@ function calcTransferTax(p){
   return {
     gain, deductRate, specialDeduction, basicDeduction, taxBase,
     capitalGainsTax, localIncomeTax, total, isMultiHouseHeavy,
+    surchargeAddRate, nonbizExcluded, isExpandedBasicDeduction,
     rows
   };
+}
+
+/* -------------------------------------------------------------------------
+   양도세 개편안 비교 — 2026(현행) 대비 지정 연도들의 세액 차이와 증감 사유 생성
+   ------------------------------------------------------------------------- */
+function compareTransferReform(p, baseResult, compareYears){
+  return compareYears.map(year => {
+    const cmp = calcTransferTax({ ...p, reformYear: year });
+    const diff = cmp.total - baseResult.total;
+    const pct = baseResult.total !== 0 ? (diff / baseResult.total * 100) : 0;
+    const reasons = [];
+
+    if (baseResult.isMultiHouseHeavy && cmp.isMultiHouseHeavy && baseResult.surchargeAddRate !== cmp.surchargeAddRate) {
+      reasons.push(`다주택 중과 가산율이 +${(baseResult.surchargeAddRate*100).toFixed(0)}%p → +${(cmp.surchargeAddRate*100).toFixed(0)}%p로 한시 완화됨`);
+    }
+    if (!baseResult.isMultiHouseHeavy && !cmp.isMultiHouseHeavy && baseResult.deductRate !== cmp.deductRate
+        && !(p.assetType === 'nonbiz_land' && cmp.nonbizExcluded)) {
+      reasons.push(`장기보유특별공제율이 ${(baseResult.deductRate*100).toFixed(0)}% → ${(cmp.deductRate*100).toFixed(0)}%로 변경됨`);
+    }
+    if (cmp.nonbizExcluded && !baseResult.nonbizExcluded) {
+      reasons.push('비사업용토지 장기보유특별공제가 배제되고 중과세율이 +10%p → +20%p로 인상됨');
+    }
+    if (baseResult.basicDeduction !== cmp.basicDeduction) {
+      reasons.push(`양도소득 기본공제가 ${won(baseResult.basicDeduction)} → ${won(cmp.basicDeduction)}로 확대됨 (10년+거주 1세대1주택 특례)`);
+    }
+    if (reasons.length === 0) {
+      reasons.push('입력하신 조건에서는 해당 연도 개편안이 적용되는 항목이 없어 현행과 동일합니다.');
+    }
+
+    return { year, result: cmp, diff, pct, reasons };
+  });
 }
 
 /* -------------------------------------------------------------------------
@@ -605,23 +592,34 @@ function calcHoldingTaxDetailed(state){
   }));
 
   return {
-    isOneHouseHousehold, houseCount, deduction, reformYear, assetRows, ownerList,
+    isOneHouseHousehold, houseCount, deduction, reformYear, ctFmvRatio, assetRows, ownerList,
     grandPropertyTax, grandCompTax, grandTotal,
   };
 }
 
-/* ---------- 법적고지 모달 ---------- */
-function openLegalModal(){
-  const el = document.getElementById('legalOverlay');
-  if (el) el.classList.add('show');
+/* -------------------------------------------------------------------------
+   보유세 개편안 비교 — 2026(현행) 대비 지정 연도들의 세액 차이와 증감 사유 생성
+   ------------------------------------------------------------------------- */
+function compareHoldingReform(state, baseResult, compareYears){
+  return compareYears.map(year => {
+    const cmp = calcHoldingTaxDetailed({ ...state, reformYear: year });
+    const diff = cmp.grandTotal - baseResult.grandTotal;
+    const pct = baseResult.grandTotal !== 0 ? (diff / baseResult.grandTotal * 100) : 0;
+    const reasons = [];
+
+    if (baseResult.deduction !== cmp.deduction) {
+      reasons.push(`종부세 기본공제가 ${won(baseResult.deduction)} → ${won(cmp.deduction)}로 변경됨`);
+    }
+    if (baseResult.ctFmvRatio !== cmp.ctFmvRatio) {
+      reasons.push(`종부세 공정시장가액비율이 ${(baseResult.ctFmvRatio*100).toFixed(0)}% → ${(cmp.ctFmvRatio*100).toFixed(0)}%로 상향됨`);
+    }
+    if (year >= 2028 && baseResult.houseCount < 3) {
+      reasons.push('2028년부터 종부세 세율표에서 주택수 구분이 폐지되어 세율 구조가 달라짐');
+    }
+    if (reasons.length === 0) {
+      reasons.push('입력하신 조건에서는 해당 연도 개편안이 적용되는 항목이 없어 현행과 동일합니다.');
+    }
+
+    return { year, result: cmp, diff, pct, reasons };
+  });
 }
-function closeLegalModal(){
-  const el = document.getElementById('legalOverlay');
-  if (el) el.classList.remove('show');
-}
-document.addEventListener('click', function(e){
-  if (e.target && e.target.id === 'legalOverlay') closeLegalModal();
-});
-document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape') closeLegalModal();
-});

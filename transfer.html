@@ -17,7 +17,7 @@
 <header class="site">
   <div class="site-bar">
     <a class="brand" href="index.html">
-      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img">
+      <img src="img/logo-horizontal.png" alt="세무회계 아진" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="logo-fallback-text" style="display:none; font-family:'Noto Serif KR',serif; font-weight:700; font-size:19px; color:var(--brand-deep);">세무회계 아진</span>
     </a>
     <nav class="tabs">
       <a href="transfer.html" class="active">양도소득세</a>
@@ -51,14 +51,13 @@
       </div>
 
       <div class="field full" style="background:var(--panel); padding:14px; border-radius:3px;">
-        <label style="font-weight:700; color:var(--brand-deep);">2026년 세제개편안 선반영 (시뮬레이션)</label>
+        <label style="font-weight:700; color:var(--brand-deep);">2026년 세제개편안 비교 (시뮬레이션)</label>
         <div class="radio-row">
-          <label><input type="radio" name="reformYear" value="2026" checked><span>현행법 (2026)</span></label>
-          <label><input type="radio" name="reformYear" value="2027"><span>2027년 개편안</span></label>
-          <label><input type="radio" name="reformYear" value="2028"><span>2028년 개편안</span></label>
-          <label><input type="radio" name="reformYear" value="2029"><span>2029년 이후 개편안</span></label>
+          <label><input type="checkbox" name="compareYear" value="2027"><span>2027년 개편안과 비교</span></label>
+          <label><input type="checkbox" name="compareYear" value="2028"><span>2028년 개편안과 비교</span></label>
+          <label><input type="checkbox" name="compareYear" value="2029"><span>2029년 이후 개편안과 비교</span></label>
         </div>
-        <span class="hint">2026.8.3 발표된 정부 세제개편안 상세본 기준 시뮬레이션입니다. 아직 국회 심의·의결 전으로 확정된 법률이 아니며, 조문·세율·시행일이 국회 논의 과정에서 달라질 수 있습니다.</span>
+        <span class="hint">계산은 항상 현행법(2026년) 기준으로 먼저 나오고, 체크한 연도의 개편안(2026.8.3 발표, 상세본 기준) 결과를 바로 옆에 비교해 보여줍니다. 아직 국회 심의·의결 전으로 확정된 법률이 아니며, 조문·세율·시행일이 달라질 수 있습니다.</span>
       </div>
 
       <div class="field">
@@ -117,7 +116,7 @@
     <h3>예상 납부세액</h3>
     <div class="headline" id="t-total">0원</div>
     <div class="breakdown" id="t-breakdown"></div>
-    <p class="compare-note" id="t-reform-note"></p>
+    <div id="t-reform-compare"></div>
     <p class="cite">
       근거: 소득세법 §55①(기본세율), §95②(장기보유특별공제), §103(양도소득기본공제), §104①·⑦(단기세율·다주택 중과)
     </p>
@@ -126,15 +125,9 @@
 
   <div class="cta">
     <p>계산 결과를 <b>세무사 상담</b>으로 한 번 더 확인해보세요. 절세 방안까지 함께 안내해드립니다.</p>
-    <a class="cta-btn" id="t-cta-open" href="#">상담 신청</a>
+    <a class="cta-btn" href="https://naver.me/FFqdGqaX" target="_blank" rel="noopener">상담 신청</a>
     <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
-
-  <form class="lead-form" id="t-lead-form">
-    <input type="text" name="name" placeholder="성함 (선택)">
-    <input type="tel" name="phone" placeholder="연락처" required>
-    <button type="submit">신청</button>
-  </form>
 
   <section class="info-section">
     <h2>자산 종류별로 세율이 다릅니다</h2>
@@ -151,11 +144,11 @@
 
 <footer class="site">
   <div class="wrap">
-    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사(59기, 등록번호 54437호)<br>
+    <p>세무회계 아진 · 전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>
     본 계산기는 참고용 간이 계산 결과이며, 실제 세액은 개별 사실관계에 따라 달라질 수 있습니다.</p>
-    <div class="footer-links">
-      <a onclick="openLegalModal()">법적고지</a>
-    </div>
+      <span style="display:block; margin-top:10px; font-size:11px; color:#8A93A3; line-height:1.7;">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다. 본 사이트의 내용과 기능은 사전 고지 없이 변경되거나 중단될 수 있습니다.
+      </span>
   </div>
 </footer>
 
@@ -182,7 +175,6 @@ document.querySelectorAll('input[name=assetType]').forEach(function(radio){
 document.getElementById('form-transfer').addEventListener('submit', function(e){
   e.preventDefault();
   const assetType = document.querySelector('input[name=assetType]:checked').value;
-  const reformYear = Number(document.querySelector('input[name=reformYear]:checked').value);
   const p = {
     assetType,
     transferPrice: rawNumber(document.getElementById('t-transferPrice')),
@@ -193,39 +185,35 @@ document.getElementById('form-transfer').addEventListener('submit', function(e){
     houseCount: Number(document.querySelector('input[name="t-houseCount"]:checked').value),
     isOneHouse: document.querySelector('input[name=isOneHouse]:checked').value === '1',
     isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
-    reformYear,
+    reformYear: 2026,
   };
   const r = calcTransferTax(p);
   document.getElementById('t-total').textContent = won(r.total);
   document.getElementById('t-breakdown').innerHTML = r.rows.map(([k,v]) =>
     `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
-  ).join('') + `<div class="row total"><span class="k">합계 (지방소득세 포함)</span><span class="v">${won(r.total)}</span></div>`;
-  document.getElementById('t-reform-note').textContent = reformYear === 2026
-    ? '현행법(2026년) 기준 계산 결과입니다.'
-    : `2026년 세제개편안(발표안) 기준 ${reformYear}년 규정을 시뮬레이션한 결과입니다. 아직 국회 통과 전이라 실제와 다를 수 있습니다.`;
+  ).join('') + `<div class="row total"><span class="k">합계 (지방소득세 포함, 현행법 2026)</span><span class="v">${won(r.total)}</span></div>`;
+
+  const compareYears = Array.from(document.querySelectorAll('input[name=compareYear]:checked')).map(el => Number(el.value));
+  const compareResults = compareTransferReform(p, r, compareYears);
+  document.getElementById('t-reform-compare').innerHTML = compareResults.map(c => {
+    const arrow = c.diff > 0 ? '▲ 증가' : (c.diff < 0 ? '▼ 감소' : '변동 없음');
+    const arrowColor = c.diff > 0 ? '#A23B2E' : (c.diff < 0 ? '#1D77B5' : 'var(--muted)');
+    return `
+      <div class="result show" style="margin-top:14px; background:#fff;">
+        <h3>${c.year}년 개편안 적용 시</h3>
+        <div class="headline" style="font-size:26px;">${won(c.result.total)}</div>
+        <p style="font-size:13.5px; font-weight:700; color:${arrowColor}; margin:4px 0 10px;">
+          현행 대비 ${arrow} ${won(Math.abs(c.diff))} (${c.pct >= 0 ? '+' : ''}${c.pct.toFixed(1)}%)
+        </p>
+        <div class="breakdown">
+          ${c.reasons.map(rs => `<div class="row"><span class="k">사유</span><span class="v" style="font-weight:400; text-align:right;">${rs}</span></div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
   document.getElementById('result-transfer').classList.add('show');
   document.getElementById('result-transfer').scrollIntoView({behavior:'smooth', block:'center'});
 });
-initLeadCapture('t', '양도소득세');
 </script>
-
-<div class="legal-overlay" id="legalOverlay">
-  <div class="legal-box">
-    <div class="legal-head">
-      <h3>법적 고지 및 책임 한계</h3>
-      <button type="button" class="legal-close" onclick="closeLegalModal()">&times;</button>
-    </div>
-    <div class="legal-body">
-      <p>본 계산기는 이용자의 편의를 돕기 위해 제공하는 참고용 도구이며, 입력한 값을 바탕으로 산출한 간이 계산 결과를 보여줍니다. 이 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않으며, 실제 신고·납부·계약 전에는 반드시 세무사 등 전문가의 확인을 거치시기 바랍니다.</p>
-      <ul>
-        <li>계산 결과는 입력값과 계산 시점의 세율·공제 기준에 따른 것으로, 법령 개정이나 개별 사실관계(특례, 감면, 세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있습니다.</li>
-        <li>세무회계 아진은 본 계산기 이용으로 발생하는 직접적·간접적 손해에 대해 책임을 지지 않습니다.</li>
-        <li>계산 결과를 바탕으로 한 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.</li>
-        <li>본 사이트의 내용과 기능은 사전 고지 없이 변경되거나 중단될 수 있습니다.</li>
-      </ul>
-      <p>정확한 상담이 필요하시면 세무회계 아진(전주시 덕진구 가인로 18 법조정문빌딩 103호)으로 문의해주세요.</p>
-    </div>
-  </div>
-</div>
 </body>
 </html>
