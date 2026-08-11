@@ -26,6 +26,54 @@ const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
 const wonMinus = n => Math.round(n) === 0 ? won(0) : ('-' + won(n));
 const clamp0 = n => Math.max(0, n);
 
+/* ---------- 상담 신청(리드캡처) — 구글 Apps Script 웹앱으로 전송 ----------
+   JB: 구글시트 + Apps Script 배포 후 발급받은 웹앱 URL을 아래에 붙여넣으세요.
+   예: 'https://script.google.com/macros/s/AKfycb.../exec'                */
+const LEAD_ENDPOINT = 'YOUR_APPS_SCRIPT_WEB_APP_URL';
+
+function initLeadCapture(prefix, calculatorName){
+  const openBtn = document.getElementById(prefix + '-cta-open');
+  const form = document.getElementById(prefix + '-lead-form');
+  if (!openBtn || !form) return;
+
+  openBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    form.classList.add('show');
+  });
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = form.querySelector('button');
+    const nameEl = form.querySelector('[name=name]');
+    const phoneEl = form.querySelector('[name=phone]');
+    const totalEl = document.getElementById(prefix + '-total');
+
+    if (LEAD_ENDPOINT === 'YOUR_APPS_SCRIPT_WEB_APP_URL') {
+      alert('아직 상담 신청 접수 주소가 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = '전송 중...';
+    try {
+      await fetch(LEAD_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          calculator: calculatorName,
+          name: nameEl ? nameEl.value : '',
+          phone: phoneEl ? phoneEl.value : '',
+          summary: totalEl ? ('예상 세액 ' + totalEl.textContent) : '',
+          url: location.href,
+        })
+      });
+      form.innerHTML = '<p style="color:#1D77B5;font-size:14px;">신청 완료 — 확인 후 순차적으로 연락드립니다.</p>';
+    } catch (err) {
+      btn.disabled = false; btn.textContent = '전송 실패, 다시 시도';
+    }
+  });
+}
+
 /* ---------- 금액 입력창 천단위 콤마 자동 포맷 ---------- */
 function attachThousands(el){
   if (!el) return;

@@ -84,8 +84,15 @@
 
   <div class="cta">
     <p>혼인·출산 공제나 부동산 시가 평가가 애매하다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
-    <a class="cta-btn" href="tel:0000000000">전화 상담</a>
+    <a class="cta-btn" id="g-cta-open" href="#">상담 신청</a>
+    <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
+
+  <form class="lead-form" id="g-lead-form">
+    <input type="text" name="name" placeholder="성함 (선택)">
+    <input type="tel" name="phone" placeholder="연락처" required>
+    <button type="submit">신청</button>
+  </form>
 
   <section class="info-section">
     <h2>증여세, 이렇게 계산됩니다</h2>
@@ -129,6 +136,7 @@ document.getElementById('form-gift').addEventListener('submit', function(e){
   document.getElementById('result-gift').classList.add('show');
   document.getElementById('result-gift').scrollIntoView({behavior:'smooth', block:'center'});
 });
+initLeadCapture('g', '증여세');
 </script>
 
 <div class="legal-overlay" id="legalOverlay">

@@ -158,6 +158,7 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
   padding:12px 20px; background:#fff; color:var(--brand-deep); font-weight:700;
   border-radius:var(--radius); text-decoration:none; font-size:14px; white-space:nowrap;
 }
+.cta-btn.outline{background:transparent; border:1px solid rgba(255,255,255,.4); color:#fff;}
 .lead-form{display:none; margin-top:14px; gap:10px; flex-wrap:wrap;}
 .lead-form.show{display:flex;}
 .lead-form input{flex:1; min-width:140px; padding:11px 12px; border-radius:var(--radius); border:1px solid var(--border-strong); background:#fff; color:var(--text);}
