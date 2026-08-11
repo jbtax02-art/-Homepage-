@@ -2,8 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TAXAJIN 계산기 미리보기</title>
+<title>미리보기</title>
 <style>
 /* ==========================================================================
    TAXAJIN — 세무회계 아진 부동산 세금 계산기
@@ -44,6 +43,7 @@ body{
   font-family:'Pretendard Variable','Pretendard',-apple-system,sans-serif;
   font-feature-settings:'tnum' 1;
   -webkit-font-smoothing:antialiased;
+  word-break:keep-all; overflow-wrap:break-word; line-break:strict;
 }
 h1,h2,h3,.serif{
   font-family:'Noto Serif KR',serif; font-weight:700; letter-spacing:-0.01em;
@@ -119,6 +119,27 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
   border:1px solid var(--border-strong); padding:8px 14px; border-radius:20px; font-size:13.5px;
   color:var(--muted); cursor:pointer; transition:.15s; background:var(--sky-bg);
 }
+
+/* ---------- 보유세 자산 입력 표 ---------- */
+.asset-table-wrap{overflow-x:auto; border:1px solid var(--border-strong); border-radius:var(--radius); margin-bottom:4px;}
+.asset-table{width:100%; border-collapse:collapse; min-width:680px; background:var(--white);}
+.asset-table th{
+  background:var(--panel); color:var(--brand-deep); font-size:12px; font-weight:700;
+  padding:10px 8px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--border-strong);
+}
+.asset-table td{padding:6px; border-bottom:1px solid var(--border);}
+.asset-table tr:last-child td{border-bottom:none;}
+.asset-table input, .asset-table select{
+  width:100%; box-sizing:border-box; background:var(--sky-bg); border:1px solid var(--border-strong);
+  color:var(--text); padding:8px 9px; border-radius:3px; font-size:13.5px; font-family:inherit;
+}
+.asset-table select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--brand) 50%),linear-gradient(135deg,var(--brand) 50%,transparent 50%); background-position:calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size:4px 4px,4px 4px; background-repeat:no-repeat; padding-right:22px;}
+.asset-table input:focus, .asset-table select:focus{outline:none; border-color:var(--brand);}
+.row-remove-btn{
+  background:none; border:none; color:var(--muted); cursor:pointer; font-size:17px;
+  width:100%; padding:4px 0;
+}
+.row-remove-btn:hover{color:#A23B2E;}
 .radio-row input{display:none;}
 .radio-row label:has(input:checked){background:var(--brand); border-color:var(--brand); color:#fff;}
 
@@ -149,9 +170,10 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
 .result .row .k{color:var(--muted);}
 .result .row .v{font-weight:600; font-variant-numeric:tabular-nums;}
 .result .row.total{border-top:1px solid var(--border-strong); margin-top:6px; padding-top:10px; font-size:16px;}
-.result .cite{font-size:11.5px; color:var(--muted); margin-top:16px; line-height:1.6; border-top:1px dashed var(--border-strong); padding-top:12px;}
+.result .cite{font-size:11.5px; color:var(--muted); margin-top:16px; line-height:1.75; border-top:1px dashed var(--border-strong); padding-top:12px;}
+.result .cite b, .result .disclaimer b{color:var(--brand-deep); font-size:12px; display:inline-block; margin-bottom:4px;}
 .result .cite a{color:var(--brand); text-decoration:underline;}
-.result .disclaimer{font-size:12px; color:var(--muted); margin-top:10px;}
+.result .disclaimer{font-size:12px; color:var(--muted); margin-top:12px; line-height:1.75;}
 .result .compare-note{font-size:12px; color:var(--brand-deep); background:var(--panel-deep); padding:10px 12px; border-radius:var(--radius); margin-top:14px;}
 
 /* ---------- CTA (상담 전환) ---------- */
@@ -270,26 +292,17 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
   a[href]:after{ content:''; }
 }
 
-.preview-nav-wrap{position:sticky; top:0; z-index:60; background:rgba(238,246,252,.95); backdrop-filter:blur(8px); border-bottom:1px solid var(--border);}
 .preview-nav{display:flex; gap:2px; max-width:920px; margin:0 auto; padding:12px 24px; overflow-x:auto;}
 .preview-tab{padding:9px 14px; font-size:13.5px; text-decoration:none; color:var(--muted); border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;}
 .preview-tab.active{color:var(--brand); border-bottom-color:var(--brand); font-weight:700;}
-.preview-banner{background:#0F4C77; color:#EAF4FC; font-size:12px; text-align:center; padding:8px 16px;}
 </style>
 </head>
 <body>
-
-<div class="preview-banner">🔍 미리보기 모드 — 실제 taxajin.com과 동일한 계산 로직입니다 (로고 이미지·상담신청 전송은 실제 사이트에서만 동작)</div>
-<div class="preview-nav-wrap">
-  <nav class="preview-nav">
-      <a href="#" class="preview-tab active" data-page="t" onclick="showPage('t'); return false;">양도소득세</a>
+<nav class="preview-nav">      <a href="#" class="preview-tab active" data-page="t" onclick="showPage('t'); return false;">양도소득세</a>
       <a href="#" class="preview-tab" data-page="a" onclick="showPage('a'); return false;">취득세</a>
       <a href="#" class="preview-tab" data-page="g" onclick="showPage('g'); return false;">증여세</a>
       <a href="#" class="preview-tab" data-page="i" onclick="showPage('i'); return false;">상속세</a>
-      <a href="#" class="preview-tab" data-page="h" onclick="showPage('h'); return false;">보유세</a>
-  </nav>
-</div>
-
+      <a href="#" class="preview-tab" data-page="h" onclick="showPage('h'); return false;">보유세</a></nav>
 <section id="page-t" class="preview-page" style="display:block;">
 <main class="wrap">
   <section class="hero">
@@ -384,11 +397,11 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
     <div class="breakdown" id="t-breakdown"></div>
     <div id="t-reform-compare"></div>
     <p class="cite">
-      근거: 소득세법 §55①(기본세율), §95②(장기보유특별공제), §103(양도소득기본공제), §104①·⑦(단기세율·다주택 중과)
+      <b>근거</b><br>소득세법 §55①(기본세율), §95②(장기보유특별공제), §103(양도소득기본공제), §104①·⑦(단기세율·다주택 중과)
     </p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 미등기양도자산·조합원입주권의 관리처분계획인가 전후 구분은 반영되어 있지 않으며, 다주택 중과 시 장기보유특별공제가 배제될 수 있습니다.</p>
+    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 미등기양도자산·조합원입주권의 관리처분계획인가 전후 구분은 반영되어 있지 않으며, 다주택 중과 시 장기보유특별공제가 배제될 수 있습니다.</p>
     <div class="print-legal">
-      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+      <b>법적 고지</b><br>본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
     </div>
     <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
@@ -494,10 +507,10 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
     <h3>예상 납부세액</h3>
     <div class="headline" id="a-total">0원</div>
     <div class="breakdown" id="a-breakdown"></div>
-    <p class="cite">근거: 지방세법 §11(취득세율), §13의2(다주택 중과), §151(지방교육세), 농어촌특별세법 §5</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 일시적 2주택 특례, 지방 저가주택 예외, 임대사업자 감면 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
+    <p class="cite"><b>근거</b><br>지방세법 §11(취득세율), §13의2(다주택 중과), §151(지방교육세), 농어촌특별세법 §5</p>
+    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 일시적 2주택 특례, 지방 저가주택 예외, 임대사업자 감면 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
     <div class="print-legal">
-      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+      <b>법적 고지</b><br>본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
     </div>
     <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
@@ -575,10 +588,10 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
     <h3>예상 납부세액</h3>
     <div class="headline" id="g-total">0원</div>
     <div class="breakdown" id="g-breakdown"></div>
-    <p class="cite">근거: 상증세법 §53(증여재산공제), §56(세율, §26 준용), §69(신고세액공제)</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 혼인·출산 증여재산공제(§53의2, 최대 1억) 등 별도 특례는 반영되어 있지 않습니다.</p>
+    <p class="cite"><b>근거</b><br>상증세법 §53(증여재산공제), §56(세율, §26 준용), §69(신고세액공제)</p>
+    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 혼인·출산 증여재산공제(§53의2, 최대 1억) 등 별도 특례는 반영되어 있지 않습니다.</p>
     <div class="print-legal">
-      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+      <b>법적 고지</b><br>본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
     </div>
     <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
@@ -682,10 +695,10 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
     <h3>예상 납부세액</h3>
     <div class="headline" id="i-total">0원</div>
     <div class="breakdown" id="i-breakdown"></div>
-    <p class="cite">근거: 상증세법 §19(배우자상속공제), §21(일괄공제), §26(세율), §69(신고세액공제)</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 인적공제·금융재산공제·동거주택상속공제(최대 6억)·가업상속공제 등은 반영되어 있지 않으며, 이런 공제가 있는 경우 실제 세액은 더 낮아질 수 있습니다.</p>
+    <p class="cite"><b>근거</b><br>상증세법 §19(배우자상속공제), §21(일괄공제), §26(세율), §69(신고세액공제)</p>
+    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 인적공제·금융재산공제·동거주택상속공제(최대 6억)·가업상속공제 등은 반영되어 있지 않으며, 이런 공제가 있는 경우 실제 세액은 더 낮아질 수 있습니다.</p>
     <div class="print-legal">
-      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+      <b>법적 고지</b><br>본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
     </div>
     <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
@@ -744,8 +757,27 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
       </div>
     </div>
 
-    <div id="asset-list"></div>
-    <button type="button" class="calc-btn" id="add-asset-btn" style="background:var(--panel-deep); color:var(--brand-deep); margin-bottom:20px;">+ 자산 추가</button>
+    <div class="asset-table-wrap">
+      <table class="asset-table">
+        <thead>
+          <tr>
+            <th style="width:13%">물건종류</th>
+            <th style="width:23%">상세주소</th>
+            <th style="width:20%">기준시가(원)</th>
+            <th style="width:13%">소유자</th>
+            <th style="width:13%">관계</th>
+            <th style="width:11%">지분율(%)</th>
+            <th style="width:7%"></th>
+          </tr>
+        </thead>
+        <tbody id="asset-rows-body"></tbody>
+      </table>
+    </div>
+    <div class="field-grid" style="margin:6px 0 20px;">
+      <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
+    </div>
+    <button type="button" class="calc-btn" id="add-row-btn" style="background:var(--panel-deep); color:var(--brand-deep); margin-bottom:20px;">+ 행 추가</button>
+    <p class="hint" style="margin:-14px 0 20px;">같은 물건을 여러 명이 공동소유한 경우, 물건종류·상세주소·기준시가가 같은 행을 여러 줄로 나눠 소유자별로 입력하세요.</p>
 
     <button type="submit" class="calc-btn">보유세 계산하기</button>
   </form>
@@ -762,10 +794,10 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
     <div id="h-owner-breakdown" style="margin-top:16px;"></div>
     <p class="compare-note" id="h-onehouse-note"></p>
     <div id="h-reform-compare"></div>
-    <p class="cite">근거: 지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
+    <p class="cite"><b>근거</b><br>지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
+    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
     <div class="print-legal">
-      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+      <b>법적 고지</b><br>본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
     </div>
     <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
@@ -791,11 +823,8 @@ footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
 </section>
 
 
-
 <div class="legal-overlay" id="legalOverlay"></div>
-
-<script>
-/* ==========================================================================
+<script>/* ==========================================================================
    TAXAJIN 계산 엔진 (v3)
    ※ 아래 세율·공제 수치는 2026.08 기준 확인된 자료이며, 실제 신고 시점의
      법령·시행령 개정 여부를 반드시 재확인해야 함. 계산기 화면에도 동일한
@@ -1521,10 +1550,8 @@ function compareHoldingReform(state, baseResult, compareYears){
     return { year, result: cmp, diff, pct, reasons };
   });
 }
-
 </script>
 <script>
-
 attachThousandsAll('#t-transferPrice, #t-acquisitionPrice, #t-necessaryExpense');
 
 const houseOnlyFields = document.getElementById('t-houseOnlyFields');
@@ -1702,110 +1729,70 @@ document.getElementById('form-inherit').addEventListener('submit', function(e){
 });
 
 
-const assetListEl = document.getElementById('asset-list');
-let assetSeq = 0;
+const rowsBodyEl = document.getElementById('asset-rows-body');
 
-function ownerRowHtml(assetId, ownerIdx, defaultName, defaultRelation, defaultPct){
+function relationOptionsHtml(defaultRelation){
+  const options = ['본인','배우자(남편)','배우자(아내)','자녀','부모','기타'];
+  return options.map(o => `<option value="${o}" ${o===defaultRelation?'selected':''}>${o}</option>`).join('');
+}
+
+function rowHtml(defaultType, defaultRelation){
   return `
-    <div class="owner-row" data-owner-idx="${ownerIdx}" style="display:flex; gap:8px; align-items:center; margin-top:8px;">
-      <input type="text" class="owner-name" placeholder="성명" value="${defaultName||''}" style="flex:1.2; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
-      <select class="owner-relation" style="flex:1; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
-        <option value="본인" ${defaultRelation==='본인'?'selected':''}>본인</option>
-        <option value="배우자(남편)" ${defaultRelation==='배우자(남편)'?'selected':''}>배우자(남편)</option>
-        <option value="배우자(아내)" ${defaultRelation==='배우자(아내)'?'selected':''}>배우자(아내)</option>
-        <option value="자녀" ${defaultRelation==='자녀'?'selected':''}>자녀</option>
-        <option value="부모" ${defaultRelation==='부모'?'selected':''}>부모</option>
-        <option value="기타" ${defaultRelation==='기타'?'selected':''}>기타</option>
+  <tr class="asset-row-line">
+    <td>
+      <select class="row-type">
+        <option value="house" ${defaultType==='house'?'selected':''}>주택</option>
+        <option value="land" ${defaultType==='land'?'selected':''}>토지</option>
+        <option value="building" ${defaultType==='building'?'selected':''}>건물</option>
       </select>
-      <input type="number" class="owner-pct" placeholder="지분%" value="${defaultPct!=null?defaultPct:100}" min="0" max="100" style="width:70px; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
-      <span style="font-size:13px; color:var(--muted);">%</span>
-      <button type="button" class="owner-remove-btn" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0 4px;" title="소유자 삭제">&times;</button>
-    </div>`;
+    </td>
+    <td><input type="text" class="row-desc" placeholder="예: 행복아파트 101동 1001호"></td>
+    <td><input type="text" inputmode="numeric" class="row-price" placeholder="예: 1,200,000,000"></td>
+    <td><input type="text" class="row-owner" placeholder="성명"></td>
+    <td><select class="row-relation">${relationOptionsHtml(defaultRelation)}</select></td>
+    <td><input type="number" class="row-pct" value="100" min="0" max="100"></td>
+    <td><button type="button" class="row-remove-btn" title="행 삭제">&times;</button></td>
+  </tr>`;
 }
 
-function assetRowHtml(assetId){
-  return `
-  <div class="calc-panel asset-row" data-asset-id="${assetId}" style="margin:0 0 16px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-      <span style="font-weight:700; color:var(--brand-deep); font-size:14px;">자산 ${assetId}</span>
-      <button type="button" class="asset-remove-btn" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px;">삭제</button>
-    </div>
-    <div class="field-grid">
-      <div class="field">
-        <label>물건 종류</label>
-        <select class="asset-type">
-          <option value="house">주택</option>
-          <option value="land">토지</option>
-          <option value="building">건물</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>내용 (예: OO아파트 OO동 OO호)</label>
-        <input type="text" class="asset-desc" placeholder="예: 행복아파트 101동 1001호">
-      </div>
-      <div class="field full">
-        <label>기준시가(공시가격, 원)</label>
-        <input type="text" inputmode="numeric" class="asset-price" placeholder="예: 1,200,000,000">
-        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
-      </div>
-    </div>
-    <div style="margin-top:14px;">
-      <label style="font-size:13px; color:var(--muted);">소유자 (지분 구성)</label>
-      <div class="owner-list"></div>
-      <button type="button" class="add-owner-btn" style="margin-top:8px; background:none; border:1px dashed var(--border-strong); color:var(--brand); padding:7px 12px; border-radius:20px; font-size:12.5px; cursor:pointer;">+ 소유자 추가</button>
-    </div>
-  </div>`;
-}
-
-function addAsset(){
-  assetSeq++;
-  const wrap = document.createElement('div');
-  wrap.innerHTML = assetRowHtml(assetSeq);
-  const assetEl = wrap.firstElementChild;
-  assetListEl.appendChild(assetEl);
-  addOwner(assetEl, '', '본인', 100);
-
-  assetEl.querySelector('.asset-remove-btn').addEventListener('click', () => assetEl.remove());
-  assetEl.querySelector('.add-owner-btn').addEventListener('click', () => addOwner(assetEl));
-}
-
-function addOwner(assetEl, name, relation, pct){
-  const ownerListEl = assetEl.querySelector('.owner-list');
-  const idx = ownerListEl.children.length;
-  const wrap = document.createElement('div');
-  wrap.innerHTML = ownerRowHtml(assetEl.dataset.assetId, idx, name, relation, pct);
-  const ownerEl = wrap.firstElementChild;
-  ownerListEl.appendChild(ownerEl);
-  ownerEl.querySelector('.owner-remove-btn').addEventListener('click', () => {
-    if (ownerListEl.children.length > 1) ownerEl.remove();
+function addRow(defaultType, defaultRelation){
+  const wrap = document.createElement('tbody');
+  wrap.innerHTML = rowHtml(defaultType || 'house', defaultRelation || '본인');
+  const rowEl = wrap.firstElementChild;
+  rowsBodyEl.appendChild(rowEl);
+  rowEl.querySelector('.row-remove-btn').addEventListener('click', () => {
+    if (rowsBodyEl.children.length > 1) rowEl.remove();
   });
+  rowEl.querySelector('.row-price').addEventListener('input', function(e){ attachThousands(e.target); });
 }
 
-document.getElementById('add-asset-btn').addEventListener('click', () => addAsset());
-addAsset(); // 최초 1개 자산 기본 표시
+document.getElementById('add-row-btn').addEventListener('click', () => addRow());
+addRow(); // 최초 1행 기본 표시
 
 document.getElementById('form-holding').addEventListener('submit', function(e){
   e.preventDefault();
   const isUrbanArea = document.querySelector('input[name=isUrbanArea]:checked').value === '1';
   const isResident = document.querySelector('input[name=isResident]:checked').value === '1';
 
-  const assets = Array.from(document.querySelectorAll('.asset-row')).map(assetEl => {
-    const priceInput = assetEl.querySelector('.asset-price');
-    const owners = Array.from(assetEl.querySelectorAll('.owner-row')).map((ownerEl, idx) => ({
-      name: ownerEl.querySelector('.owner-name').value.trim() || `소유자${idx + 1}`,
-      relation: ownerEl.querySelector('.owner-relation').value,
-      sharePct: Number(ownerEl.querySelector('.owner-pct').value || 0),
-    }));
-    return {
-      type: assetEl.querySelector('.asset-type').value,
-      desc: assetEl.querySelector('.asset-desc').value.trim(),
-      publicPrice: rawNumber(priceInput),
-      owners,
-    };
-  }).filter(a => a.publicPrice > 0);
+  // 행 단위 입력값을 [물건종류+상세주소+기준시가]가 같은 것끼리 묶어서 하나의 자산(공동소유)으로 재구성
+  const groups = new Map();
+  Array.from(rowsBodyEl.querySelectorAll('.asset-row-line')).forEach((rowEl, idx) => {
+    const type = rowEl.querySelector('.row-type').value;
+    const desc = rowEl.querySelector('.row-desc').value.trim();
+    const publicPrice = rawNumber(rowEl.querySelector('.row-price'));
+    const ownerName = rowEl.querySelector('.row-owner').value.trim() || `소유자${idx + 1}`;
+    const relation = rowEl.querySelector('.row-relation').value;
+    const sharePct = Number(rowEl.querySelector('.row-pct').value || 0);
+    if (publicPrice <= 0) return;
+
+    const key = `${type}|${desc}|${publicPrice}`;
+    if (!groups.has(key)) groups.set(key, { type, desc, publicPrice, owners: [] });
+    groups.get(key).owners.push({ name: ownerName, relation, sharePct });
+  });
+  const assets = Array.from(groups.values());
 
   if (assets.length === 0) {
-    alert('자산을 1건 이상 입력해주세요.');
+    alert('물건종류·상세주소·기준시가·지분율을 입력한 행이 1건 이상 필요합니다.');
     return;
   }
 
@@ -1829,8 +1816,8 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
     '<h3 style="margin-top:6px;">소유자별 합계</h3>' +
     r.ownerList.map(o => `
       <div class="breakdown" style="margin-top:6px;">
-        <div class="row"><span class="k">${o.name} — 재산세</span><span class="v">${won(o.propertyTax)}</span></div>
-        <div class="row"><span class="k">${o.name} — 종합부동산세</span><span class="v">${won(o.compTax)}</span></div>
+        <div class="row"><span class="k">${o.name} 재산세</span><span class="v">${won(o.propertyTax)}</span></div>
+        <div class="row"><span class="k">${o.name} 종합부동산세</span><span class="v">${won(o.compTax)}</span></div>
         <div class="row total"><span class="k">${o.name} 합계</span><span class="v">${won(o.total)}</span></div>
       </div>`
     ).join('');
@@ -1860,25 +1847,13 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
   document.getElementById('result-holding').classList.add('show');
   document.getElementById('result-holding').scrollIntoView({behavior:'smooth', block:'center'});
 });
-
-// 자산가격 입력창에 콤마 포맷을 동적으로도 적용
-assetListEl.addEventListener('input', function(e){
-  if (e.target.classList.contains('asset-price')) attachThousands(e.target);
-});
-
-
 </script>
 <script>
 function showPage(p){
   document.querySelectorAll('.preview-page').forEach(function(el){ el.style.display = 'none'; });
   document.getElementById('page-' + p).style.display = 'block';
-  document.querySelectorAll('.preview-tab').forEach(function(el){ el.classList.remove('active'); });
-  document.querySelector('.preview-tab[data-page="' + p + '"]').classList.add('active');
-  window.scrollTo(0,0);
 }
-function submitLeadDirect(calculatorName, summaryLines){
-  alert('[미리보기 모드] 실제 사이트에서는 여기서 전화번호 입력 후 이메일로 자동 전송됩니다.\n\n계산기: ' + calculatorName + '\n' + summaryLines.join('\n'));
-}
+function submitLeadDirect(){}
 </script>
 </body>
 </html>
