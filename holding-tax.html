@@ -25,6 +25,7 @@
       <a href="gift.html">증여세</a>
       <a href="inheritance.html">상속세</a>
       <a href="holding-tax.html" class="active">보유세</a>
+      <a href="strategy.html">종합 Simulation</a>
     </nav>
   </div>
 </header>
@@ -51,15 +52,7 @@
           <label><input type="radio" name="isResident" value="1" checked><span>예</span></label>
           <label><input type="radio" name="isResident" value="0"><span>아니오</span></label>
         </div>
-        <span class="hint">2027년 개편안부터 1세대1주택자 종부세 기본공제가 거주 14억/비거주 9억으로 나뉩니다</span>
-      </div>
-      <div class="field full" style="background:var(--panel); padding:14px; border-radius:3px;">
-        <label style="font-weight:700; color:var(--brand-deep);">2026년 세제개편안 비교 (시뮬레이션)</label>
-        <div class="radio-row">
-          <label><input type="checkbox" name="compareYear" value="2027"><span>2027년 개편안과 비교</span></label>
-          <label><input type="checkbox" name="compareYear" value="2028"><span>2028년 이후 개편안과 비교</span></label>
-        </div>
-        <span class="hint">계산은 항상 현행법(2026년) 기준으로 먼저 나오고, 체크한 연도의 개편안(2026.8.3 발표, 상세본 기준) 종부세 결과를 바로 옆에 비교해 보여줍니다. 재산세는 이번 개편안 대상이 아니라 변동 없습니다(종부세만 반영). '기타(다주택)' 기본공제 확대식과 3주택+조정지역 공정시장가액비율 80%는 세부 요건이 복잡해 근사치로 처리했습니다.</span>
+        <span class="hint">2027년 개편안부터 1세대1주택자 종부세 기본공제가 거주 14억/비거주 9억으로 나뉩니다. 종부세 공정시장가액비율도 2026년 60% → 2027년 70% → 3주택+조정지역은 2028년 80%로 단계적으로 오릅니다.</span>
       </div>
     </div>
 
@@ -99,6 +92,11 @@
     <div id="h-asset-breakdown"></div>
     <div id="h-owner-breakdown" style="margin-top:16px;"></div>
     <p class="compare-note" id="h-onehouse-note"></p>
+    <div class="reform-compare-buttons" id="h-reform-buttons">
+      <span class="reform-compare-label">2026년 세제개편안(발표안)이 적용되면?</span>
+      <button type="button" class="reform-btn" data-year="2027">2027년 개편안과 비교</button>
+      <button type="button" class="reform-btn" data-year="2028">2028년 이후 개편안과 비교</button>
+    </div>
     <div id="h-reform-compare"></div>
     <p class="cite"><b>근거</b><br>지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
     <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
@@ -237,13 +235,38 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
     ? `1세대1주택 특례 적용 대상입니다 (세대 전체 보유주택 ${r.houseCount}건, 종부세 기본공제 ${won(r.deduction)} 적용, 현행법 2026 기준)`
     : `세대 전체 보유주택이 ${r.houseCount}건이라 1세대1주택 특례가 적용되지 않습니다 (종부세 기본공제 ${won(r.deduction)} 적용, 현행법 2026 기준)`;
 
-  const compareYears = Array.from(document.querySelectorAll('input[name=compareYear]:checked')).map(el => Number(el.value));
-  const compareResults = compareHoldingReform(state, r, compareYears);
-  document.getElementById('h-reform-compare').innerHTML = compareResults.map(c => {
+  lastHoldingState = state;
+  lastHoldingResult = r;
+  document.getElementById('h-reform-compare').innerHTML = '';
+  document.querySelectorAll('#h-reform-buttons .reform-btn').forEach(btn => btn.classList.remove('active'));
+
+  document.getElementById('result-holding').classList.add('show');
+  document.getElementById('result-holding').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+let lastHoldingState = null, lastHoldingResult = null;
+
+document.querySelectorAll('#h-reform-buttons .reform-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    if (!lastHoldingResult) { alert('먼저 보유세 계산하기를 눌러주세요.'); return; }
+    const year = Number(btn.dataset.year);
+    const alreadyShown = btn.classList.contains('active');
+
+    if (alreadyShown) {
+      btn.classList.remove('active');
+      document.getElementById('h-reform-card-' + year)?.remove();
+      return;
+    }
+    btn.classList.add('active');
+
+    const [c] = compareHoldingReform(lastHoldingState, lastHoldingResult, [year]);
     const arrow = c.diff > 0 ? '▲ 증가' : (c.diff < 0 ? '▼ 감소' : '변동 없음');
     const arrowColor = c.diff > 0 ? '#A23B2E' : (c.diff < 0 ? '#1D77B5' : 'var(--muted)');
-    return `
-      <div class="result show" style="margin-top:14px; background:#fff;">
+    const card = document.createElement('div');
+    card.id = 'h-reform-card-' + year;
+    card.className = 'result show';
+    card.style.cssText = 'margin-top:14px; background:#fff;';
+    card.innerHTML = `
         <h3>${c.year}년 개편안 적용 시 (세대 합계)</h3>
         <div class="headline" style="font-size:26px;">${won(c.result.grandTotal)}</div>
         <p style="font-size:13.5px; font-weight:700; color:${arrowColor}; margin:4px 0 10px;">
@@ -251,12 +274,10 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
         </p>
         <div class="breakdown">
           ${c.reasons.map(rs => `<div class="row"><span class="k">사유</span><span class="v" style="font-weight:400; text-align:right;">${rs}</span></div>`).join('')}
-        </div>
-      </div>`;
-  }).join('');
-
-  document.getElementById('result-holding').classList.add('show');
-  document.getElementById('result-holding').scrollIntoView({behavior:'smooth', block:'center'});
+        </div>`;
+    document.getElementById('h-reform-compare').appendChild(card);
+    card.scrollIntoView({behavior:'smooth', block:'center'});
+  });
 });
 </script>
 </body>
