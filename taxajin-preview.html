@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAXAJIN 계산기 미리보기</title>
+<style>
+/* ==========================================================================
+   TAXAJIN — 세무회계 아진 부동산 세금 계산기
+   Design tokens (v2 — Sky Blue)
+   -------------------------------------------------------------------------
+   Color
+     --sky-bg     #EEF6FC  페이지 배경 (옅은 하늘색)
+     --white      #FFFFFF  카드 배경
+     --panel      #E6F2FB  보조 패널 배경 (연한 하늘색)
+     --border     #CFE3F2  구분선/테두리
+     --brand      #1D77B5  브랜드 블루 — CTA, 링크, 강조
+     --brand-deep #0F4C77  진한 블루 — 헤더 텍스트, 호버
+     --brand-light#6FB8E3  밝은 블루 — 배지, 보조 강조
+     --text       #16232E  본문 텍스트
+     --muted      #5C7285  보조 텍스트
+     --stamp      #1D77B5  인장 모티프 (블루톤)
+
+   Type
+     Display : "Noto Serif KR"  — 관인 서류를 연상시키는 명조 헤드라인
+     Body    : "Pretendard"     — 가독성 위주 본문
+   ========================================================================== */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&display=swap');
+
+:root{
+  --sky-bg:#EEF6FC; --white:#FFFFFF; --panel:#E6F2FB; --panel-deep:#D8ECFA;
+  --border:#CFE3F2; --border-strong:#AED4EC;
+  --brand:#1D77B5; --brand-deep:#0F4C77; --brand-light:#6FB8E3;
+  --text:#16232E; --muted:#5C7285; --stamp:#1D77B5;
+  --radius:3px;
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--sky-bg); color:var(--text);
+  font-family:'Pretendard Variable','Pretendard',-apple-system,sans-serif;
+  font-feature-settings:'tnum' 1;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.serif{
+  font-family:'Noto Serif KR',serif; font-weight:700; letter-spacing:-0.01em;
+  margin:0;
+}
+a{color:inherit;}
+img{max-width:100%;}
+button{font-family:inherit;}
+
+/* ---------- 레이아웃 ---------- */
+.wrap{max-width:920px; margin:0 auto; padding:0 24px;}
+
+/* ---------- 헤더 / 인감 로고 ---------- */
+header.site{
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50;
+  background:rgba(238,246,252,.92); backdrop-filter:blur(8px);
+}
+.site-bar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 24px; max-width:920px; margin:0 auto;
+}
+.brand{display:flex; align-items:center; gap:10px; text-decoration:none;}
+.logo-img{height:44px; width:auto; display:block;}
+
+nav.tabs{display:flex; gap:2px;}
+nav.tabs a{
+  padding:9px 12px; font-size:13.5px; text-decoration:none; color:var(--muted);
+  border-bottom:2px solid transparent; transition:.15s; white-space:nowrap;
+}
+nav.tabs a:hover{color:var(--brand-deep);}
+nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-weight:700;}
+
+@media (max-width:640px){
+  nav.tabs{gap:0; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs a{padding:9px 8px; font-size:12.5px;}
+  .brand-sub{display:none;}
+}
+
+/* ---------- 히어로 ---------- */
+.hero{padding:52px 0 28px;}
+.eyebrow{
+  display:inline-flex; align-items:center;
+  font-family:'Noto Serif KR',serif; font-weight:700;
+  font-size:20px; color:var(--brand-deep); letter-spacing:-0.01em; margin-bottom:14px;
+}
+.hero h1{font-size:clamp(26px,4.4vw,38px); line-height:1.35; color:var(--brand-deep);}
+.hero h1 em{color:var(--brand); font-style:normal;}
+.hero p{margin-top:14px; color:var(--muted); font-size:15px; line-height:1.7; max-width:60ch;}
+
+/* ---------- 계산기 패널 ---------- */
+.calc-panel{
+  background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
+  padding:28px; margin:24px 0 40px; box-shadow:0 2px 10px rgba(29,119,181,.06);
+}
+.field-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 20px;}
+.field{display:flex; flex-direction:column; gap:6px;}
+.field.full{grid-column:1 / -1;}
+.field label{font-size:13px; color:var(--muted);}
+.field .hint{font-size:11.5px; color:#7C93A6; margin-top:2px;}
+.field .hint a{color:var(--brand); text-decoration:underline;}
+.field input[type=number], .field input[type=text], .field select{
+  background:var(--sky-bg); border:1px solid var(--border-strong); color:var(--text);
+  padding:11px 12px; border-radius:var(--radius); font-size:15px; width:100%;
+  font-family:inherit;
+}
+.field select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--brand) 50%),linear-gradient(135deg,var(--brand) 50%,transparent 50%); background-position:calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat;}
+.field input:focus, .field select:focus{outline:none; border-color:var(--brand);}
+
+.radio-row{display:flex; gap:8px; flex-wrap:wrap;}
+.radio-row label{
+  border:1px solid var(--border-strong); padding:8px 14px; border-radius:20px; font-size:13.5px;
+  color:var(--muted); cursor:pointer; transition:.15s; background:var(--sky-bg);
+}
+.radio-row input{display:none;}
+.radio-row label:has(input:checked){background:var(--brand); border-color:var(--brand); color:#fff;}
+
+.calc-btn{
+  margin-top:22px; width:100%; padding:15px; border:none; border-radius:var(--radius);
+  background:var(--brand); color:#fff; font-size:15.5px; font-weight:700;
+  cursor:pointer; letter-spacing:.02em; transition:.15s;
+}
+.calc-btn:hover{background:var(--brand-deep);}
+
+/* ---------- 결과 카드 ---------- */
+.result{
+  display:none; background:var(--panel); color:var(--text);
+  border-radius:var(--radius); margin-top:20px; padding:28px; position:relative;
+  border:1px solid var(--border-strong);
+}
+.result.show{display:block;}
+.result .stamp{
+  position:absolute; top:20px; right:22px; width:56px; height:56px; border-radius:50%;
+  border:2px solid var(--stamp); color:var(--stamp); display:flex; align-items:center; justify-content:center;
+  font-family:'Noto Serif KR',serif; font-weight:900; font-size:12px; transform:rotate(8deg); text-align:center; line-height:1.2;
+  opacity:.85; background:var(--white);
+}
+.result h3{font-size:13px; color:var(--brand); letter-spacing:.06em; margin-bottom:6px;}
+.result .headline{font-family:'Noto Serif KR',serif; font-weight:900; font-size:clamp(28px,5vw,40px); margin-bottom:18px; color:var(--brand-deep);}
+.result .breakdown{border-top:1px dashed var(--border-strong); padding-top:14px;}
+.result .row{display:flex; justify-content:space-between; padding:6px 0; font-size:14px;}
+.result .row .k{color:var(--muted);}
+.result .row .v{font-weight:600; font-variant-numeric:tabular-nums;}
+.result .row.total{border-top:1px solid var(--border-strong); margin-top:6px; padding-top:10px; font-size:16px;}
+.result .cite{font-size:11.5px; color:var(--muted); margin-top:16px; line-height:1.6; border-top:1px dashed var(--border-strong); padding-top:12px;}
+.result .cite a{color:var(--brand); text-decoration:underline;}
+.result .disclaimer{font-size:12px; color:var(--muted); margin-top:10px;}
+.result .compare-note{font-size:12px; color:var(--brand-deep); background:var(--panel-deep); padding:10px 12px; border-radius:var(--radius); margin-top:14px;}
+
+/* ---------- CTA (상담 전환) ---------- */
+.cta{
+  margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+  background:var(--brand-deep); border:1px solid var(--brand-deep); border-radius:var(--radius); padding:18px 20px;
+}
+.cta p{margin:0; font-size:14px; color:#EAF4FC; flex:1; min-width:200px;}
+.cta p b{color:var(--brand-light);}
+.cta-btn{
+  padding:12px 20px; background:#fff; color:var(--brand-deep); font-weight:700;
+  border-radius:var(--radius); text-decoration:none; font-size:14px; white-space:nowrap;
+}
+.cta-btn.outline{background:transparent; border:1px solid rgba(255,255,255,.4); color:#fff;}
+.lead-form{display:none; margin-top:14px; gap:10px; flex-wrap:wrap;}
+.lead-form.show{display:flex;}
+.lead-form input{flex:1; min-width:140px; padding:11px 12px; border-radius:var(--radius); border:1px solid var(--border-strong); background:#fff; color:var(--text);}
+.lead-form button{padding:11px 18px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer;}
+
+/* ---------- 콘텐츠 섹션 (SEO용 설명 텍스트) ---------- */
+.info-section{padding:36px 0 20px; border-top:1px solid var(--border);}
+.info-section h2{font-size:20px; margin-bottom:14px; color:var(--brand-deep);}
+.info-section p, .info-section li{color:var(--muted); font-size:14.5px; line-height:1.85;}
+.info-section .law-ref{color:var(--brand); font-weight:600;}
+
+.related{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+.related a{
+  border:1px solid var(--border-strong); padding:10px 16px; border-radius:20px; text-decoration:none;
+  font-size:13.5px; color:var(--muted); background:var(--white);
+}
+.related a:hover{border-color:var(--brand); color:var(--brand);}
+
+/* ---------- 홈 허브 카드 ---------- */
+.hub-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.hub-card{
+  background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
+  padding:22px; text-decoration:none; display:block; transition:.15s; box-shadow:0 2px 10px rgba(29,119,181,.05);
+}
+.hub-card:hover{border-color:var(--brand); transform:translateY(-2px);}
+.hub-card h3{color:var(--brand-deep); font-size:17px; margin-bottom:8px;}
+.hub-card p{color:var(--muted); font-size:13.5px; line-height:1.6; margin:0;}
+.hub-card .tag{display:inline-block; font-size:10.5px; color:var(--brand); background:var(--panel); padding:2px 8px; border-radius:10px; margin-bottom:8px; font-weight:600;}
+@media (max-width:640px){.hub-grid{grid-template-columns:1fr;}}
+
+footer.site{border-top:1px solid var(--border); padding:28px 0 60px; margin-top:20px;}
+footer.site p{font-size:12px; color:var(--muted); line-height:1.8;}
+.footer-links{margin-top:10px; display:flex; gap:14px;}
+.footer-links a{color:var(--brand); text-decoration:underline; cursor:pointer; font-size:12px; background:none; border:none; padding:0; font-family:inherit;}
+
+/* ---------- 법적고지 모달 ---------- */
+.legal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(15,45,66,.55); z-index:200;
+  align-items:center; justify-content:center; padding:20px;
+}
+.legal-overlay.show{display:flex;}
+.legal-box{
+  background:var(--white); width:100%; max-width:520px; max-height:80vh; overflow-y:auto;
+  border-radius:var(--radius); box-shadow:0 20px 50px rgba(15,45,66,.3);
+}
+.legal-head{
+  display:flex; align-items:center; justify-content:space-between; padding:18px 22px;
+  border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--white);
+}
+.legal-head h3{font-size:16px; color:var(--brand-deep);}
+.legal-close{
+  background:none; border:none; font-size:22px; line-height:1; cursor:pointer; color:var(--muted); padding:4px;
+}
+.legal-close:hover{color:var(--brand);}
+.legal-body{padding:20px 22px 26px; font-size:13.5px; color:var(--muted); line-height:1.85;}
+.legal-body p{margin:0 0 12px;}
+.legal-body ul{padding-left:18px; margin:10px 0;}
+.legal-body li{margin-bottom:8px;}
+
+/* ---------- 결과 PDF 저장 버튼 ---------- */
+.print-btn{
+  display:inline-flex; align-items:center; gap:6px; margin-top:14px;
+  background:var(--white); border:1px solid var(--border-strong); color:var(--brand-deep);
+  padding:10px 16px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer;
+}
+.print-btn:hover{border-color:var(--brand); color:var(--brand);}
+.print-header{display:none;}
+.print-legal{display:none;}
+
+/* ---------- 인쇄(PDF 저장) 전용 스타일 ---------- */
+@media print{
+  header.site, nav.tabs, .calc-panel, .cta, .lead-form,
+  .hero, .info-section, .related, footer.site, .print-btn,
+  .hub-grid, .stamp { display:none !important; }
+
+  body{ background:#fff; color:#000; }
+  .wrap{ max-width:100%; padding:0; }
+
+  .print-header{
+    display:block; margin-bottom:20px; padding-bottom:14px; border-bottom:2px solid #14202B;
+  }
+  .print-header .firm{ font-family:'Noto Serif KR',serif; font-weight:700; font-size:20px; color:#000; }
+  .print-header .meta{ font-size:11.5px; color:#333; margin-top:4px; line-height:1.6; }
+
+  .print-legal{
+    display:block; margin-top:18px; padding-top:12px; border-top:1px dashed #999;
+    font-size:10px; color:#444; line-height:1.7;
+  }
+  .print-legal b{ color:#000; }
+
+  .result{
+    display:block !important; background:#fff !important; border:none !important;
+    padding:0 !important; color:#000 !important;
+  }
+  .result .headline{ color:#000 !important; }
+  .result h3{ color:#333 !important; }
+  .result .row .v, .result .row .k{ color:#000 !important; }
+  .result .row.total{ border-top:1px solid #000 !important; }
+  .compare-note{ border:1px solid #999 !important; background:#f5f5f5 !important; color:#000 !important; }
+  .cite, .disclaimer{ color:#444 !important; }
+
+  a[href]:after{ content:''; }
+}
+
+.preview-nav-wrap{position:sticky; top:0; z-index:60; background:rgba(238,246,252,.95); backdrop-filter:blur(8px); border-bottom:1px solid var(--border);}
+.preview-nav{display:flex; gap:2px; max-width:920px; margin:0 auto; padding:12px 24px; overflow-x:auto;}
+.preview-tab{padding:9px 14px; font-size:13.5px; text-decoration:none; color:var(--muted); border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;}
+.preview-tab.active{color:var(--brand); border-bottom-color:var(--brand); font-weight:700;}
+.preview-banner{background:#0F4C77; color:#EAF4FC; font-size:12px; text-align:center; padding:8px 16px;}
+</style>
+</head>
+<body>
+
+<div class="preview-banner">🔍 미리보기 모드 — 실제 taxajin.com과 동일한 계산 로직입니다 (로고 이미지·상담신청 전송은 실제 사이트에서만 동작)</div>
+<div class="preview-nav-wrap">
+  <nav class="preview-nav">
+      <a href="#" class="preview-tab active" data-page="t" onclick="showPage('t'); return false;">양도소득세</a>
+      <a href="#" class="preview-tab" data-page="a" onclick="showPage('a'); return false;">취득세</a>
+      <a href="#" class="preview-tab" data-page="g" onclick="showPage('g'); return false;">증여세</a>
+      <a href="#" class="preview-tab" data-page="i" onclick="showPage('i'); return false;">상속세</a>
+      <a href="#" class="preview-tab" data-page="h" onclick="showPage('h'); return false;">보유세</a>
+  </nav>
+</div>
+
+<section id="page-t" class="preview-page" style="display:block;">
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">부동산 양도소득세</span>
+    <h1>양도소득세 <em>계산기</em></h1>
+    <p>주택, 분양권, 조합원입주권은 세율 구조 자체가 다릅니다. 자산 종류를 먼저 선택하면 그에 맞는 세율이 자동 적용됩니다.</p>
+  </section>
+
+  <form class="calc-panel" id="form-transfer">
+    <div class="field-grid">
+      <div class="field full">
+        <label>자산 종류</label>
+        <div class="radio-row" id="t-assetType">
+          <label><input type="radio" name="assetType" value="house" checked><span>주택</span></label>
+          <label><input type="radio" name="assetType" value="presale"><span>분양권</span></label>
+          <label><input type="radio" name="assetType" value="right"><span>조합원입주권</span></label>
+          <label><input type="radio" name="assetType" value="nonbiz_land"><span>비사업용토지</span></label>
+          <label><input type="radio" name="assetType" value="other_asset"><span>기타자산(상가·사업용토지 등)</span></label>
+        </div>
+        <span class="hint" id="t-assetHint">주택: 2년 이상 보유 시 기본세율(6~45%)+장기보유특별공제 적용</span>
+      </div>
+
+      <div class="field full" style="background:var(--panel); padding:14px; border-radius:3px;">
+        <label style="font-weight:700; color:var(--brand-deep);">2026년 세제개편안 비교 (시뮬레이션)</label>
+        <div class="radio-row">
+          <label><input type="checkbox" name="compareYear" value="2027"><span>2027년 개편안과 비교</span></label>
+          <label><input type="checkbox" name="compareYear" value="2028"><span>2028년 개편안과 비교</span></label>
+          <label><input type="checkbox" name="compareYear" value="2029"><span>2029년 이후 개편안과 비교</span></label>
+        </div>
+        <span class="hint">계산은 항상 현행법(2026년) 기준으로 먼저 나오고, 체크한 연도의 개편안(2026.8.3 발표, 상세본 기준) 결과를 바로 옆에 비교해 보여줍니다. 아직 국회 심의·의결 전으로 확정된 법률이 아니며, 조문·세율·시행일이 달라질 수 있습니다.</span>
+      </div>
+
+      <div class="field">
+        <label>양도가액 (매도금액, 원)</label>
+        <input type="text" inputmode="numeric" id="t-transferPrice" placeholder="예: 800,000,000" required>
+      </div>
+      <div class="field">
+        <label>취득가액 (매수 당시 금액, 원)</label>
+        <input type="text" inputmode="numeric" id="t-acquisitionPrice" placeholder="예: 500,000,000" required>
+      </div>
+      <div class="field">
+        <label>필요경비 (중개수수료·취득세 등, 원)</label>
+        <input type="text" inputmode="numeric" id="t-necessaryExpense" value="0">
+      </div>
+      <div class="field">
+        <label>보유기간 (년)</label>
+        <input type="number" id="t-holdYears" placeholder="예: 7" step="0.1" required>
+      </div>
+
+      <div id="t-houseOnlyFields" class="field-grid" style="grid-column:1/-1; display:contents;">
+        <div class="field">
+          <label>거주기간 (년, 1세대1주택인 경우)</label>
+          <input type="number" id="t-liveYears" value="0" step="0.1">
+          <span class="hint">2년 이상 거주해야 1세대1주택 장특공제 특례 적용</span>
+        </div>
+        <div class="field">
+          <label>보유주택 수 (세대 기준)</label>
+          <div class="radio-row">
+            <label><input type="radio" name="t-houseCount" value="1" checked><span>1주택</span></label>
+            <label><input type="radio" name="t-houseCount" value="2"><span>2주택</span></label>
+            <label><input type="radio" name="t-houseCount" value="3"><span>3주택 이상</span></label>
+          </div>
+        </div>
+        <div class="field full">
+          <label>1세대 1주택 비과세 요건 검토 대상인가요?</label>
+          <div class="radio-row">
+            <label><input type="radio" name="isOneHouse" value="1"><span>예 (1주택자 특례 적용)</span></label>
+            <label><input type="radio" name="isOneHouse" value="0" checked><span>아니오</span></label>
+          </div>
+        </div>
+        <div class="field full">
+          <label>양도 주택이 조정대상지역 내에 있나요?</label>
+          <div class="radio-row">
+            <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
+            <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
+          </div>
+          <span class="hint">2026.5.10부터 조정대상지역 다주택자 중과 유예 종료 (2주택 +20%p, 3주택↑ +30%p)</span>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">양도소득세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-transfer">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 양도소득세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="t-total">0원</div>
+    <div class="breakdown" id="t-breakdown"></div>
+    <div id="t-reform-compare"></div>
+    <p class="cite">
+      근거: 소득세법 §55①(기본세율), §95②(장기보유특별공제), §103(양도소득기본공제), §104①·⑦(단기세율·다주택 중과)
+    </p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 미등기양도자산·조합원입주권의 관리처분계획인가 전후 구분은 반영되어 있지 않으며, 다주택 중과 시 장기보유특별공제가 배제될 수 있습니다.</p>
+    <div class="print-legal">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+    </div>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
+  </div>
+
+  <div class="cta">
+    <p>계산 결과를 <b>세무사 상담</b>으로 한 번 더 확인해보세요. 절세 방안까지 함께 안내해드립니다.</p>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('양도소득세', buildSummaryFromBreakdown('t')); event.preventDefault();">상담 신청</a>
+    <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
+  </div>
+
+  <section class="info-section">
+    <h2>자산 종류별로 세율이 다릅니다</h2>
+    <p><b>주택</b>은 2년 이상 보유 시 기본세율(6~45%, <span class="law-ref">§55①</span>)에 장기보유특별공제를 적용받습니다. <b>분양권</b>은 보유기간과 무관하게 60%(1년 미만은 70%) 단일세율이 고정 적용되고 장기보유특별공제도 없습니다. <b>조합원입주권</b>은 2년 이상 보유하면 주택처럼 기본세율과 장기보유특별공제(일반 2%/년)를 받을 수 있지만, 1세대1주택 특례 4%+4% 공제는 적용되지 않습니다.</p>
+    <p>세 자산 모두 1년 미만 보유 시 70%, 1~2년 보유 시 60% 단기세율이 적용되는 것은 공통입니다(<span class="law-ref">§104①</span>).</p>
+    <p>1세대1주택 비과세 특례는 보유기간 2년 이상이 원칙이며, 취득 당시 조정대상지역에 있던 주택은 2년 이상 거주까지 해야 인정됩니다(<span class="law-ref">소득세법 시행령 §154①</span>). 요건을 갖추더라도 실거래가 12억원을 초과하면 전액 비과세가 아니라, 12억원 초과분에 해당하는 양도차익만 안분해 과세합니다(<span class="law-ref">§95③</span>).</p>
+  </section>
+
+  <div class="related">
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
+    <a href="inheritance.html">→ 상속세 계산기</a>
+  </div>
+</main>
+</section>
+
+<section id="page-a" class="preview-page" style="display:none;">
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">부동산 취득세</span>
+    <h1>취득세 <em>계산기</em></h1>
+    <p>주택, 오피스텔, 농지, 그 외 부동산은 세율 체계가 서로 다릅니다. 자산 종류와 취득 원인(매매·증여·상속·원시취득)을 선택하면 그에 맞는 세율이 자동 적용됩니다.</p>
+  </section>
+
+  <form class="calc-panel" id="form-acq">
+    <div class="field-grid">
+      <div class="field full">
+        <label>자산 종류</label>
+        <div class="radio-row" id="a-assetType">
+          <label><input type="radio" name="assetType" value="house" checked><span>주택</span></label>
+          <label><input type="radio" name="assetType" value="officetel"><span>오피스텔</span></label>
+          <label><input type="radio" name="assetType" value="farmland"><span>농지</span></label>
+          <label><input type="radio" name="assetType" value="other"><span>그 외 (상가·토지·건물)</span></label>
+        </div>
+      </div>
+      <div class="field full">
+        <label>취득 원인</label>
+        <div class="radio-row">
+          <label><input type="radio" name="acquireType" value="trade" checked><span>매매(유상취득)</span></label>
+          <label><input type="radio" name="acquireType" value="gift"><span>증여</span></label>
+          <label><input type="radio" name="acquireType" value="inherit"><span>상속</span></label>
+          <label><input type="radio" name="acquireType" value="original"><span>원시취득(신축)</span></label>
+        </div>
+        <span class="hint" id="a-typeHint">주택 매매: 6억이하 1%, 6~9억 구간산식, 9억초과 3% (다주택·조정지역 중과 별도)</span>
+      </div>
+      <div class="field">
+        <label>취득가액 (또는 시가인정액, 원)</label>
+        <input type="text" inputmode="numeric" id="a-price" placeholder="예: 600,000,000" required>
+        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
+      </div>
+      <div class="field" id="a-houseCountField">
+        <label>취득 후 보유주택 수 (세대 기준, 주택만 해당)</label>
+        <input type="number" id="a-houseCount" value="1" min="1">
+      </div>
+      <div class="field" id="a-areaField">
+        <label>전용면적 85㎡ 초과 여부 (주택만 해당)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="exceedsArea85" value="1"><span>예</span></label>
+          <label><input type="radio" name="exceedsArea85" value="0" checked><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field" id="a-adjustedField">
+        <label>조정대상지역 내 부동산인가요? (주택만 해당)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
+          <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field" id="a-farmingField" style="display:none">
+        <label>2년 이상 자경(직접 경작)했나요? (농지 매매만 해당)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isSelfFarmed" value="1"><span>예</span></label>
+          <label><input type="radio" name="isSelfFarmed" value="0" checked><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field full" id="a-firstTimeField">
+        <label>생애최초 주택 구입인가요? (주택 매매·1주택만 해당)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isFirstTime" value="1"><span>예</span></label>
+          <label><input type="radio" name="isFirstTime" value="0" checked><span>아니오</span></label>
+        </div>
+        <span class="hint">12억원 이하 주택, 취득세 200만원 한도 감면 (지방세특례제한법 §36의3)</span>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">취득세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-acq">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 취득세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="a-total">0원</div>
+    <div class="breakdown" id="a-breakdown"></div>
+    <p class="cite">근거: 지방세법 §11(취득세율), §13의2(다주택 중과), §151(지방교육세), 농어촌특별세법 §5</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 일시적 2주택 특례, 지방 저가주택 예외, 임대사업자 감면 등은 반영되어 있지 않으므로 별도 확인이 필요합니다.</p>
+    <div class="print-legal">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+    </div>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
+  </div>
+
+  <div class="cta">
+    <p>다주택 중과·감면 특례 적용 여부가 헷갈린다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('취득세', buildSummaryFromBreakdown('a')); event.preventDefault();">상담 신청</a>
+    <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
+  </div>
+
+  <section class="info-section">
+    <h2>자산 종류별로 취득세율이 다릅니다</h2>
+    <p><b>주택</b>은 매매 시 가액에 따라 1~3%(다주택·조정지역 중과 시 8·12%), 증여 3.5%(조정지역 3억원 이상 12%), 상속·원시취득 2.8%가 적용됩니다. <b>오피스텔</b>은 주택법상 주택이 아니어서 매매 시 다주택 여부와 무관하게 4% 고정세율이 적용됩니다. <b>농지</b>는 매매 시 신규 3%, 2년 이상 자경 시 1.5%로 우대되고 상속은 2.3%로 일반 상속(2.8%)보다 낮습니다. <b>그 외</b> 토지·상가·건물은 매매 4%, 증여 3.5%, 상속·원시취득 2.8%입니다.</p>
+  </section>
+
+  <div class="related">
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
+    <a href="inheritance.html">→ 상속세 계산기</a>
+  </div>
+</main>
+</section>
+
+<section id="page-g" class="preview-page" style="display:none;">
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">증여세</span>
+    <h1>증여세 <em>계산기</em></h1>
+    <p>수증자와 증여자의 관계에 따라 증여재산공제(상증세법 §53)가 다르게 적용됩니다. 10년간 합산 기준이므로 과거 증여 이력이 있다면 함께 입력하세요.</p>
+  </section>
+
+  <form class="calc-panel" id="form-gift">
+    <div class="field-grid">
+      <div class="field">
+        <label>증여재산가액 (원)</label>
+        <input type="text" inputmode="numeric" id="g-giftValue" placeholder="예: 300,000,000" required>
+      </div>
+      <div class="field">
+        <label>수증자와의 관계</label>
+        <select id="g-relation">
+          <option value="spouse">배우자</option>
+          <option value="lineal_adult" selected>직계존비속 (성년)</option>
+          <option value="lineal_minor">직계존비속 (미성년)</option>
+          <option value="other_relative">기타친족</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>최근 10년 내 동일인으로부터 받은 증여 중 공제받은 금액 (원)</label>
+        <input type="text" inputmode="numeric" id="g-priorUsed" value="0">
+        <span class="hint">10년 합산 기준 (§53) — 이전에 공제받은 금액만큼 이번 공제한도에서 차감됩니다</span>
+      </div>
+      <div class="field full">
+        <label>부담부증여 시 수증자가 인수한 채무액 (원, 해당 없으면 0)</label>
+        <input type="text" inputmode="numeric" id="g-debt" value="0">
+        <span class="hint">증여재산가액에서 채무액을 뺀 금액이 증여세 과세대상입니다 (§47③). 채무 인수분은 증여자에게 별도로 양도소득세가 발생할 수 있습니다.</span>
+      </div>
+      <div class="field full">
+        <label>혼인·출산 증여재산공제를 적용하나요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="useMarriageChildDeduction" value="1"><span>예</span></label>
+          <label><input type="radio" name="useMarriageChildDeduction" value="0" checked><span>아니오</span></label>
+        </div>
+        <span class="hint">혼인신고일 전후 2년(출산은 출생일부터 2년) 이내 직계존속 증여 시 기존 공제와 별도로 최대 1억원 추가 공제 (§53의2, 2024.1.1 시행). 직계존비속 증여에만 적용됩니다.</span>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">증여세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-gift">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 증여세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="g-total">0원</div>
+    <div class="breakdown" id="g-breakdown"></div>
+    <p class="cite">근거: 상증세법 §53(증여재산공제), §56(세율, §26 준용), §69(신고세액공제)</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 혼인·출산 증여재산공제(§53의2, 최대 1억) 등 별도 특례는 반영되어 있지 않습니다.</p>
+    <div class="print-legal">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+    </div>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
+  </div>
+
+  <div class="cta">
+    <p>혼인·출산 공제나 부동산 시가 평가가 애매하다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('증여세', buildSummaryFromBreakdown('g')); event.preventDefault();">상담 신청</a>
+    <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
+  </div>
+
+  <section class="info-section">
+    <h2>증여세, 이렇게 계산됩니다</h2>
+    <p>증여재산가액에서 관계별 공제(배우자 6억원, 직계존비속 5천만원·미성년 2천만원, 기타친족 1천만원, <span class="law-ref">상증세법 §53</span>)를 뺀 과세표준에 10~50% 5단계 누진세율(<span class="law-ref">§56, §26</span>)을 적용합니다. 기한 내 신고 시 산출세액의 3%를 신고세액공제(<span class="law-ref">§69</span>)로 추가로 뺍니다.</p>
+  </section>
+
+  <div class="related">
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="inheritance.html">→ 상속세 계산기</a>
+  </div>
+</main>
+</section>
+
+<section id="page-i" class="preview-page" style="display:none;">
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">상속세</span>
+    <h1>상속세 <em>계산기</em></h1>
+    <p>상속재산가액과 배우자 유무·상속분을 입력하면 일괄공제(§21)와 배우자상속공제(§19)를 반영한 예상 세액을 계산합니다.</p>
+  </section>
+
+  <form class="calc-panel" id="form-inherit">
+    <div class="field-grid">
+      <div class="field">
+        <label>상속재산가액 (채무·장례비 차감 전 총액, 원)</label>
+        <input type="text" inputmode="numeric" id="i-totalEstate" placeholder="예: 1,500,000,000" required>
+      </div>
+      <div class="field">
+        <label>사전증여재산가산액 (원)</label>
+        <input type="text" inputmode="numeric" id="i-priorGift" value="0">
+        <span class="hint">상속인은 10년, 상속인 외는 5년 이내 증여재산은 상속세 과세가액에 가산 (§13)</span>
+      </div>
+      <div class="field">
+        <label>공과금 (원)</label>
+        <input type="text" inputmode="numeric" id="i-publicDues" value="0">
+      </div>
+      <div class="field">
+        <label>장례비용 (원)</label>
+        <input type="text" inputmode="numeric" id="i-funeralCost" value="0">
+        <span class="hint">통상 500만~1,500만원 한도, 봉안시설비는 500만원 별도 (§14)</span>
+      </div>
+      <div class="field full">
+        <label>채무 (원)</label>
+        <input type="text" inputmode="numeric" id="i-debt" value="0">
+      </div>
+      <div class="field">
+        <label>배우자가 생존해 있나요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="hasSpouse" value="1" checked><span>예</span></label>
+          <label><input type="radio" name="hasSpouse" value="0"><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label>배우자의 실제 상속분 (원)</label>
+        <input type="text" inputmode="numeric" id="i-spouseShare" value="0">
+        <span class="hint">최소 5억원, 최대 30억원 한도 (§19)</span>
+      </div>
+      <div class="field">
+        <label>자녀 수 (명)</label>
+        <input type="number" id="i-childCount" value="0" min="0">
+      </div>
+      <div class="field">
+        <label>미성년 상속인의 만 19세까지 잔여연수 합계</label>
+        <input type="number" id="i-minorYears" value="0" min="0">
+        <span class="hint">예: 10세 자녀 1명이면 9년 입력</span>
+      </div>
+      <div class="field">
+        <label>연로자(만 65세 이상) 상속인 수 (명)</label>
+        <input type="number" id="i-elderlyCount" value="0" min="0">
+      </div>
+      <div class="field">
+        <label>순금융재산 상속액 (원)</label>
+        <input type="text" inputmode="numeric" id="i-financialAsset" value="0">
+        <span class="hint">예금·보험금·주식 등, 금융채무는 제외. 순금융재산의 20%와 2천만원 중 큰 금액을 최대 2억원까지 공제 (§22)</span>
+      </div>
+      <div class="field full">
+        <label>사전증여재산에 대해 이미 낸 증여세액 (원)</label>
+        <input type="text" inputmode="numeric" id="i-giftTaxCredit" value="0">
+        <span class="hint">사전증여재산가산액이 있는 경우, 이미 납부한 증여세를 상속세에서 공제해 이중과세를 조정합니다 (§28). 자녀·미성년·연로자와 금융재산을 입력하지 않으면 일괄공제 5억원이 자동 적용됩니다.</span>
+      </div>
+    </div>
+    <button type="submit" class="calc-btn">상속세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-inherit">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 상속세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 납부세액</h3>
+    <div class="headline" id="i-total">0원</div>
+    <div class="breakdown" id="i-breakdown"></div>
+    <p class="cite">근거: 상증세법 §19(배우자상속공제), §21(일괄공제), §26(세율), §69(신고세액공제)</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 인적공제·금융재산공제·동거주택상속공제(최대 6억)·가업상속공제 등은 반영되어 있지 않으며, 이런 공제가 있는 경우 실제 세액은 더 낮아질 수 있습니다.</p>
+    <div class="print-legal">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+    </div>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
+  </div>
+
+  <div class="cta">
+    <p>배우자공제·동거주택공제 등 추가 공제 가능 여부는 <b>세무사 상담</b>으로 꼼꼼히 확인하세요.</p>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('상속세', buildSummaryFromBreakdown('i')); event.preventDefault();">상담 신청</a>
+    <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
+  </div>
+
+  <section class="info-section">
+    <h2>상속세, 이렇게 계산됩니다</h2>
+    <p>상속재산가액에서 일괄공제 5억원(<span class="law-ref">§21</span>, 인적공제 합계와 택일)과 배우자상속공제 최소 5억~최대 30억원(<span class="law-ref">§19</span>)을 뺀 과세표준에 10~50% 5단계 누진세율(<span class="law-ref">§26</span>)을 적용합니다. 배우자와 자녀가 있는 일반적인 가정은 상속재산 10억원까지는 상속세가 발생하지 않는 경우가 많습니다.</p>
+  </section>
+
+  <div class="related">
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
+  </div>
+</main>
+</section>
+
+<section id="page-h" class="preview-page" style="display:none;">
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">재산세·종합부동산세</span>
+    <h1>보유세 <em>계산기</em></h1>
+    <p>세대가 보유한 주택·토지·건물을 자산별로 등록하고 각 자산의 소유자와 지분을 입력하면, 재산세와 종합부동산세를 소유자별로 나눠서 계산합니다.</p>
+  </section>
+
+  <form class="calc-panel" id="form-holding">
+    <div class="field-grid" style="margin-bottom:18px;">
+      <div class="field">
+        <label>도시지역(도시계획구역) 내 자산인가요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isUrbanArea" value="1" checked><span>예</span></label>
+          <label><input type="radio" name="isUrbanArea" value="0"><span>아니오</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label>(1세대1주택인 경우) 그 주택에 실제 거주 중인가요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isResident" value="1" checked><span>예</span></label>
+          <label><input type="radio" name="isResident" value="0"><span>아니오</span></label>
+        </div>
+        <span class="hint">2027년 개편안부터 1세대1주택자 종부세 기본공제가 거주 14억/비거주 9억으로 나뉩니다</span>
+      </div>
+      <div class="field full" style="background:var(--panel); padding:14px; border-radius:3px;">
+        <label style="font-weight:700; color:var(--brand-deep);">2026년 세제개편안 비교 (시뮬레이션)</label>
+        <div class="radio-row">
+          <label><input type="checkbox" name="compareYear" value="2027"><span>2027년 개편안과 비교</span></label>
+          <label><input type="checkbox" name="compareYear" value="2028"><span>2028년 이후 개편안과 비교</span></label>
+        </div>
+        <span class="hint">계산은 항상 현행법(2026년) 기준으로 먼저 나오고, 체크한 연도의 개편안(2026.8.3 발표, 상세본 기준) 종부세 결과를 바로 옆에 비교해 보여줍니다. 재산세는 이번 개편안 대상이 아니라 변동 없습니다(종부세만 반영). '기타(다주택)' 기본공제 확대식과 3주택+조정지역 공정시장가액비율 80%는 세부 요건이 복잡해 근사치로 처리했습니다.</span>
+      </div>
+    </div>
+
+    <div id="asset-list"></div>
+    <button type="button" class="calc-btn" id="add-asset-btn" style="background:var(--panel-deep); color:var(--brand-deep); margin-bottom:20px;">+ 자산 추가</button>
+
+    <button type="submit" class="calc-btn">보유세 계산하기</button>
+  </form>
+
+  <div class="result" id="result-holding">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 보유세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
+    <div class="stamp">계산<br>완료</div>
+    <h3>예상 연간 보유세 (세대 합계)</h3>
+    <div class="headline" id="h-total">0원</div>
+    <div id="h-asset-breakdown"></div>
+    <div id="h-owner-breakdown" style="margin-top:16px;"></div>
+    <p class="compare-note" id="h-onehouse-note"></p>
+    <div id="h-reform-compare"></div>
+    <p class="cite">근거: 지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
+    <div class="print-legal">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+    </div>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
+  </div>
+
+  <div class="cta">
+    <p>지분 구성이나 다주택 보유세 절세 방법이 궁금하다면 <b>세무사 상담</b>으로 확인해보세요.</p>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('보유세', buildHoldingSummary()); event.preventDefault();">상담 신청</a>
+    <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
+  </div>
+
+  <section class="info-section">
+    <h2>보유세, 이렇게 계산됩니다</h2>
+    <p>재산세는 물건(자산) 단위로 과세됩니다. 세대 전체가 보유한 주택이 1건뿐이면 1세대1주택 특례세율(0.05~0.35%)이 적용되고, 2건 이상이면 표준세율(0.1~0.4%)이 적용됩니다(<span class="law-ref">지방세법 §111</span>). 공동명의인 경우 물건 전체 기준으로 세액을 산출한 뒤 지분율대로 나눠 각자에게 고지됩니다.</p>
+    <p>종합부동산세는 오직 주택에만 적용되며, 각 소유자가 보유한 모든 주택의 지분을 인별로 합산해 기본공제(1세대1주택 12억원, 그 외 9억원)를 뺀 뒤 세율을 적용합니다(<span class="law-ref">종부세법 §8·§9</span>).</p>
+  </section>
+
+  <div class="related">
+    <a href="acquisition.html">→ 취득세 계산기</a>
+    <a href="transfer.html">→ 양도소득세 계산기</a>
+    <a href="gift.html">→ 증여세 계산기</a>
+  </div>
+</main>
+</section>
+
+
+
+<div class="legal-overlay" id="legalOverlay"></div>
+
+<script>
+/* ==========================================================================
+   TAXAJIN 계산 엔진 (v3)
+   ※ 아래 세율·공제 수치는 2026.08 기준 확인된 자료이며, 실제 신고 시점의
+     법령·시행령 개정 여부를 반드시 재확인해야 함. 계산기 화면에도 동일한
+     안내 문구를 노출한다. (JB 확인 필요 — 매년 1월/개정 시 갱신)
+
+   출처
+   - 양도세 기본세율: 소득세법 §55①, §104① (누진세율 6~45%, 8단계)
+   - 양도세 단기세율: 1년미만 70%, 1~2년 60% (주택·조합원입주권·분양권 공통,
+     소득세법 §104①, '21.6.1. 이후 양도분)
+   - 분양권: 보유기간 무관 60%/70% 단일세율 고정, 장기보유특별공제 없음
+   - 조합원입주권: 2년 이상 보유 시 기본세율+장기보유특별공제(일반 2%/년), 이하 단기세율
+   - 양도세 다주택 중과(주택): 2026.5.10 유예 종료, 조정대상지역 2주택 +20%p,
+     3주택↑ +30%p (소득세법 §104⑦)
+   - 취득세 기본세율: 지방세법 §11 (6억↓ 1%, 6~9억 구간산식, 9억↑ 3%)
+   - 취득세 다주택 중과: 조정대상지역 2주택 8%, 3주택↑ 12%
+     증여취득 3.5%(조정지역 3억↑ 12%), 상속취득 2.8%
+   - 상속·증여세 세율: 상증세법 §26, §56 (10~50% 5단계 누진)
+   - 상속공제: 일괄공제 5억(§21), 배우자상속공제 5억~30억(§19)
+   - 증여재산공제: 배우자 6억, 직계존속·비속 5천만(미성년 2천만),
+     기타친족 1천만, 10년 합산 (§53)
+   - 보유세: 지방세법 §111(재산세), 종부세법 §8·§9(종합부동산세)
+   ========================================================================== */
+
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+const wonMinus = n => Math.round(n) === 0 ? won(0) : ('-' + won(n));
+const clamp0 = n => Math.max(0, n);
+
+/* ---------- 상담 신청: 클릭 한 번으로 계산 결과 + 전화번호를 이메일로 바로 전송 (EmailJS) ----------
+   JB: emailjs.com에서 발급받은 3개 값을 아래에 붙여넣으세요.
+   (Service ID, Template ID, Public Key — 설정 방법은 안내한 단계 참고)          */
+const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY';
+
+
+
+function submitLeadDirect(calculatorName, summaryLines){
+  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+    alert('아직 상담 접수 연결이 완료되지 않았습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  const phone = prompt('상담 연락받으실 전화번호를 입력해주세요.\n(입력 후 확인을 누르면 계산 결과와 함께 바로 접수됩니다)');
+  if (!phone || !phone.trim()) return; // 취소하거나 빈 값이면 전송하지 않음
+
+  const payload = {
+    calculator: calculatorName,
+    phone: phone.trim(),
+    summary: summaryLines.join(' / '),
+    url: location.href,
+  };
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, payload).then(() => {
+    showCopyToast('상담 신청이 접수되었습니다. 확인 후 순차적으로 연락드립니다.');
+  }).catch(() => {
+    showCopyToast('전송 중 문제가 발생했습니다. 전화로 문의해주세요.');
+  });
+}
+
+function buildSummaryFromBreakdown(prefix){
+  const breakdownEl = document.getElementById(prefix + '-breakdown');
+  const totalEl = document.getElementById(prefix + '-total');
+  const lines = [];
+  if (breakdownEl) {
+    breakdownEl.querySelectorAll('.row').forEach(row => {
+      const k = row.querySelector('.k');
+      const v = row.querySelector('.v');
+      if (k && v) lines.push(`${k.textContent.trim()}: ${v.textContent.trim()}`);
+    });
+  }
+  if (totalEl) lines.push(`합계: ${totalEl.textContent.trim()}`);
+  return lines;
+}
+
+function buildHoldingSummary(){
+  const totalEl = document.getElementById('h-total');
+  const ownerEl = document.getElementById('h-owner-breakdown');
+  const lines = [];
+  if (ownerEl) {
+    ownerEl.querySelectorAll('.row').forEach(row => {
+      const k = row.querySelector('.k');
+      const v = row.querySelector('.v');
+      if (k && v) lines.push(`${k.textContent.trim()}: ${v.textContent.trim()}`);
+    });
+  }
+  if (totalEl) lines.push(`세대 합계: ${totalEl.textContent.trim()}`);
+  return lines;
+}
+
+/* ---------- 인쇄(PDF 저장) 직전 발급일시 채워넣기 ---------- */
+function preparePrintDate(){
+  const now = new Date().toLocaleString('ko-KR', { dateStyle: 'long', timeStyle: 'short' });
+  document.querySelectorAll('.print-date').forEach(el => { el.textContent = now; });
+}
+
+function showCopyToast(message){
+  let toast = document.getElementById('copyToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'copyToast';
+    toast.style.cssText = 'position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:300; background:#0F4C77; color:#fff; padding:12px 18px; border-radius:6px; font-size:13.5px; max-width:90vw; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,.25);';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.style.display = 'block';
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => { toast.style.display = 'none'; }, 4500);
+}
+
+/* ---------- 금액 입력창 천단위 콤마 자동 포맷 ---------- */
+function attachThousands(el){
+  if (!el) return;
+  el.addEventListener('input', function(){
+    const raw = el.value.replace(/[^0-9]/g, '');
+    el.value = raw ? Number(raw).toLocaleString('ko-KR') : '';
+  });
+}
+function rawNumber(el){
+  if (!el) return 0;
+  return Number((el.value || '0').replace(/[^0-9]/g, '')) || 0;
+}
+function attachThousandsAll(selector){
+  document.querySelectorAll(selector).forEach(attachThousands);
+}
+
+/* 소득세법 §55① 8단계 누진세율표 — 양도세 기본세율에 동일 적용 */
+const INCOME_TAX_BRACKETS = [
+  { limit: 14000000,        rate: 0.06, deduction: 0 },
+  { limit: 50000000,        rate: 0.15, deduction: 1260000 },
+  { limit: 88000000,        rate: 0.24, deduction: 5760000 },
+  { limit: 150000000,       rate: 0.35, deduction: 15440000 },
+  { limit: 300000000,       rate: 0.38, deduction: 19940000 },
+  { limit: 500000000,       rate: 0.40, deduction: 25940000 },
+  { limit: 1000000000,      rate: 0.42, deduction: 35940000 },
+  { limit: Infinity,        rate: 0.45, deduction: 65940000 },
+];
+function progressiveTax(base, brackets){
+  if (base <= 0) return 0;
+  const b = brackets.find(b => base <= b.limit);
+  return base * b.rate - b.deduction;
+}
+
+/* 상증세법 §26/§56 5단계 누진세율표 */
+const ESTATE_GIFT_BRACKETS = [
+  { limit: 100000000,  rate: 0.10, deduction: 0 },
+  { limit: 500000000,  rate: 0.20, deduction: 10000000 },
+  { limit: 1000000000, rate: 0.30, deduction: 60000000 },
+  { limit: 3000000000, rate: 0.40, deduction: 160000000 },
+  { limit: Infinity,   rate: 0.50, deduction: 460000000 },
+];
+
+/* -------------------------------------------------------------------------
+   2026년 세제개편안 (2026.8.3 재정경제부 발표, 상세본 기준) — 연도별 시뮬레이션 설정
+   ※ 발표안은 아직 국회 심의·의결 전으로 확정 법률이 아님. 조문·세율·시행일은
+     국회 논의 과정에서 달라질 수 있음. 시행시기가 항목별로 2027/2028/2029로
+     다르므로 "적용 연도"를 선택하면 그 시점 규정을 반영해 계산합니다.
+   근거: 2026년 세제개편안 상세본, 소득세법 §95②③⑦~⑬, §103, §104①⑦,
+        종합부동산세법 §7①·§8①·§9①②⑤⑧⑨·§10·§13·§14①
+   ------------------------------------------------------------------------- */
+function getReformSettings(reformYear){
+  const y = reformYear || 2026; // 2026 = 현행법(개편 미적용)
+  return {
+    // 1세대1주택 특례 장기보유특별공제(개정 후 "장기거주 소득공제") — 보유/거주 tier
+    // 시행 '28.1.1. 이후 양도분 (소득법 §95②)
+    oneHouseHoldRate: y <= 2027 ? 0.04 : (y === 2028 ? 0.02 : 0),
+    oneHouseHoldMax:  y <= 2027 ? 0.40 : (y === 2028 ? 0.20 : 0),
+    oneHouseLiveRate: y <= 2027 ? 0.04 : (y === 2028 ? 0.06 : 0.08),
+    oneHouseLiveMax:  y <= 2027 ? 0.40 : (y === 2028 ? 0.60 : 0.80),
+    // 다주택자 주택(1세대1주택 특례 미해당) 장기보유특별공제 — 보유/거주 tier
+    // 시행 '28.1.1. 이후 양도분 (소득법 §95②)
+    multiHoldRate: y <= 2027 ? 0.02 : (y === 2028 ? 0.01 : 0),
+    multiHoldMax:  y <= 2027 ? 0.30 : (y === 2028 ? 0.15 : 0),
+    multiLiveRate: y <= 2027 ? 0 : 0.02,
+    multiLiveMax:  y <= 2027 ? 0 : 0.30,
+    // 다주택 조정대상지역 양도세 중과 가산율 한시 완화(2년 이상 보유 요건)
+    // 시행 '27.1.1. 이후 양도분, '27~'28년 한시조치 (소득법 §104⑦)
+    surcharge2: y === 2027 ? 0.05 : (y === 2028 ? 0.10 : 0.20),
+    surcharge3: y === 2027 ? 0.10 : (y === 2028 ? 0.15 : 0.30),
+    // 10년 이상 거주 1세대1주택(양도가액 30억원 이하) 양도소득 기본공제 확대(250만→2,500만)
+    // 시행 '27.1.1. 이후 양도분 (소득법 §103)
+    basicDeductionExpand: y >= 2027,
+    // 비사업용토지 장기보유특별공제 배제 + 중과세율 10%p→20%p
+    // 시행 '28.1.1. 이후 양도분 (소득법 §95④, §104①)
+    nonbizNewRule: y >= 2028,
+  };
+}
+
+/* -------------------------------------------------------------------------
+   1) 양도소득세 — 자산유형별(주택/분양권/입주권) 세율 분기
+   p.reformYear: 2026(현행, 기본값) | 2027 | 2028 | 2029 — 2026 세제개편안 시뮬레이션
+   ------------------------------------------------------------------------- */
+function calcTransferTax(p){
+  const settings = getReformSettings(p.reformYear);
+  const gain = clamp0(p.transferPrice - p.acquisitionPrice - p.necessaryExpense);
+  const isExpandedBasicDeduction = settings.basicDeductionExpand
+    && p.assetType === 'house' && p.isOneHouse && p.liveYears >= 10 && p.transferPrice <= 3000000000;
+  const basicDeduction = isExpandedBasicDeduction ? 25000000 : 2500000; // 소득세법 §103
+  const gainAfterBasic = clamp0(gain - basicDeduction);
+
+  // 분양권: 보유기간과 무관하게 60%/70% 단일세율, 장특공제 없음
+  if (p.assetType === 'presale') {
+    const rate = p.holdYears < 1 ? 0.70 : 0.60;
+    const capitalGainsTax = gainAfterBasic * rate;
+    const localIncomeTax = capitalGainsTax * 0.1;
+    const total = capitalGainsTax + localIncomeTax;
+    return {
+      gain, taxBase: gainAfterBasic, capitalGainsTax, localIncomeTax, total, rateApplied: rate,
+      rows: [
+        ['양도차익', won(gain)],
+        ['기본공제', wonMinus(basicDeduction)],
+        ['과세표준', won(gainAfterBasic)],
+        [`분양권 단일세율 (${(rate*100).toFixed(0)}%)`, won(capitalGainsTax)],
+        ['지방소득세 (본세의 10%)', won(localIncomeTax)],
+      ]
+    };
+  }
+
+  // 단기보유세율: 주택·조합원입주권은 70%/60%, 비사업용토지·기타자산은 50%/40% (소득세법 §104①2·3호)
+  const isHouseLike = (p.assetType === 'house' || p.assetType === 'right');
+  if (p.holdYears < 2) {
+    const rate = isHouseLike
+      ? (p.holdYears < 1 ? 0.70 : 0.60)
+      : (p.holdYears < 1 ? 0.50 : 0.40);
+    const capitalGainsTax = gainAfterBasic * rate;
+    const localIncomeTax = capitalGainsTax * 0.1;
+    const total = capitalGainsTax + localIncomeTax;
+    return {
+      gain, taxBase: gainAfterBasic, capitalGainsTax, localIncomeTax, total, rateApplied: rate,
+      rows: [
+        ['양도차익', won(gain)],
+        ['기본공제', wonMinus(basicDeduction)],
+        ['과세표준', won(gainAfterBasic)],
+        [`단기보유세율 (${(rate*100).toFixed(0)}%)`, won(capitalGainsTax)],
+        ['지방소득세 (본세의 10%)', won(localIncomeTax)],
+      ]
+    };
+  }
+
+  // 2년 이상 보유: 조정대상지역 다주택 중과 대상이면 장기보유특별공제 자체가 배제됨(§95②),
+  // 그 외에는 기본세율 + 장기보유특별공제 (비사업용토지는 기본세율에 10%p 가산)
+  // 1세대1주택 비과세 특례는 조정대상지역 취득 주택의 경우 2년 이상 거주해야 인정됨 (소득세법 시행령 §154①)
+  const qualifiesOneHouse = p.assetType === 'house' && p.isOneHouse && (!p.isAdjustedArea || p.liveYears >= 2);
+  const oneHouseExceptionFailed = p.assetType === 'house' && p.isOneHouse && !qualifiesOneHouse;
+  const isMultiHouseHeavy = p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !qualifiesOneHouse;
+
+  let deductRate = 0, specialDeduction = 0, taxBase, capitalGainsTax, effectiveRatePct;
+  let surchargeAddRate = null, nonbizExcluded = false, highValuePortion = null;
+
+  if (isMultiHouseHeavy) {
+    // 다주택 중과: 장특공제 배제, 과세표준 = 양도차익 - 기본공제만
+    const addRate = p.houseCount === 2 ? settings.surcharge2 : settings.surcharge3;
+    surchargeAddRate = addRate;
+    const surchargeBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + addRate}));
+    taxBase = gainAfterBasic;
+    capitalGainsTax = progressiveTax(taxBase, surchargeBrackets);
+    const marginalBand = surchargeBrackets.find(b => taxBase <= b.limit);
+    effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
+  } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
+    // 2028년 이후: 비사업용토지 장특공제 완전 배제 + 중과세율 +20%p (개편안 §95④, §104①)
+    nonbizExcluded = true;
+    taxBase = gainAfterBasic;
+    const nonbizBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.20}));
+    capitalGainsTax = progressiveTax(taxBase, nonbizBrackets);
+    const marginalBand = nonbizBrackets.find(b => taxBase <= b.limit);
+    effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
+  } else {
+    let baseGain = gain; // 장특공제·과세표준 산정에 쓸 기준 양도차익 (고가주택은 안분된 값으로 대체)
+
+    if (qualifiesOneHouse) {
+      // 고가주택(실거래가 12억원 초과): 12억원 초과분에 해당하는 양도차익만 과세 (소득세법 §95③)
+      if (p.transferPrice > 1200000000) {
+        const ratio = (p.transferPrice - 1200000000) / p.transferPrice;
+        baseGain = gain * ratio;
+        highValuePortion = { ratio, taxableGain: baseGain };
+      }
+      const holdRate = Math.min(Math.floor(p.holdYears) * settings.oneHouseHoldRate, settings.oneHouseHoldMax);
+      const liveRate = Math.min(Math.floor(p.liveYears) * settings.oneHouseLiveRate, settings.oneHouseLiveMax);
+      deductRate = p.liveYears >= 2 ? (holdRate + liveRate) : 0;
+    } else if (p.assetType === 'house') {
+      // 다주택자 주택(1세대1주택 특례 미해당, 또는 특례 요건 미충족) — 보유/거주 tier 중 큰 쪽 (§95②, '28년 이후 거주요건 추가)
+      const holdRate = (p.holdYears >= 3) ? Math.min(Math.floor(p.holdYears) * settings.multiHoldRate, settings.multiHoldMax) : 0;
+      const liveRate = (p.liveYears >= 2) ? Math.min(Math.floor(p.holdYears) * settings.multiLiveRate, settings.multiLiveMax) : 0;
+      deductRate = Math.max(holdRate, liveRate);
+    } else {
+      // 조합원입주권·기타자산·비사업용토지(개편 미적용 연도): 일반 2%/년, 최대 30% — 이번 개편안에서 세율 변동 없음
+      deductRate = p.holdYears >= 3 ? Math.min(Math.floor(p.holdYears) * 0.02, 0.30) : 0;
+    }
+    specialDeduction = baseGain * deductRate;
+    taxBase = clamp0(baseGain - specialDeduction - basicDeduction);
+
+    const brackets = (p.assetType === 'nonbiz_land')
+      ? INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.10})) // 비사업용토지 +10%p (§104①8, 개편 전)
+      : INCOME_TAX_BRACKETS;
+    capitalGainsTax = progressiveTax(taxBase, brackets);
+    const marginalBand = brackets.find(b => taxBase <= b.limit);
+    effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
+  }
+
+  const localIncomeTax = capitalGainsTax * 0.1;
+  const total = capitalGainsTax + localIncomeTax;
+
+  const rows = [
+    ['양도차익', won(gain)],
+  ];
+  if (oneHouseExceptionFailed) {
+    rows.push(['1세대1주택 비과세 특례', '미적용 (조정대상지역 취득주택은 2년 이상 거주 필요)']);
+  }
+  if (highValuePortion) {
+    rows.push(['12억원 초과분 과세대상 양도차익', won(highValuePortion.taxableGain) + ` (전체의 ${(highValuePortion.ratio*100).toFixed(1)}%)`]);
+  }
+  if (isMultiHouseHeavy) {
+    rows.push(['장기보유특별공제', '배제 (다주택 중과 대상)']);
+  } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
+    rows.push(['장기보유특별공제', '배제 (2028년 개편안 — 비사업용토지)']);
+  } else {
+    rows.push([`장기보유특별공제 (${(deductRate*100).toFixed(0)}%)`, wonMinus(specialDeduction)]);
+  }
+  if (isExpandedBasicDeduction) {
+    rows.push(['기본공제 (10년+거주 1세대1주택 확대, 개편안)', wonMinus(basicDeduction)]);
+  } else {
+    rows.push(['기본공제', wonMinus(basicDeduction)]);
+  }
+  rows.push(
+    ['과세표준', won(taxBase)],
+    [`양도소득세 (한계세율 ${effectiveRatePct}%)`, won(capitalGainsTax)],
+    ['지방소득세 (본세의 10%)', won(localIncomeTax)],
+  );
+
+  return {
+    gain, deductRate, specialDeduction, basicDeduction, taxBase,
+    capitalGainsTax, localIncomeTax, total, isMultiHouseHeavy,
+    surchargeAddRate, nonbizExcluded, isExpandedBasicDeduction,
+    qualifiesOneHouse, oneHouseExceptionFailed, highValuePortion,
+    rows
+  };
+}
+
+/* -------------------------------------------------------------------------
+   양도세 개편안 비교 — 2026(현행) 대비 지정 연도들의 세액 차이와 증감 사유 생성
+   ------------------------------------------------------------------------- */
+function compareTransferReform(p, baseResult, compareYears){
+  return compareYears.map(year => {
+    const cmp = calcTransferTax({ ...p, reformYear: year });
+    const diff = cmp.total - baseResult.total;
+    const pct = baseResult.total !== 0 ? (diff / baseResult.total * 100) : 0;
+    const reasons = [];
+
+    if (baseResult.isMultiHouseHeavy && cmp.isMultiHouseHeavy && baseResult.surchargeAddRate !== cmp.surchargeAddRate) {
+      reasons.push(`다주택 중과 가산율이 +${(baseResult.surchargeAddRate*100).toFixed(0)}%p → +${(cmp.surchargeAddRate*100).toFixed(0)}%p로 한시 완화됨`);
+    }
+    if (!baseResult.isMultiHouseHeavy && !cmp.isMultiHouseHeavy && baseResult.deductRate !== cmp.deductRate
+        && !(p.assetType === 'nonbiz_land' && cmp.nonbizExcluded)) {
+      reasons.push(`장기보유특별공제율이 ${(baseResult.deductRate*100).toFixed(0)}% → ${(cmp.deductRate*100).toFixed(0)}%로 변경됨`);
+    }
+    if (cmp.nonbizExcluded && !baseResult.nonbizExcluded) {
+      reasons.push('비사업용토지 장기보유특별공제가 배제되고 중과세율이 +10%p → +20%p로 인상됨');
+    }
+    if (baseResult.basicDeduction !== cmp.basicDeduction) {
+      reasons.push(`양도소득 기본공제가 ${won(baseResult.basicDeduction)} → ${won(cmp.basicDeduction)}로 확대됨 (10년+거주 1세대1주택 특례)`);
+    }
+    if (reasons.length === 0) {
+      reasons.push('입력하신 조건에서는 해당 연도 개편안이 적용되는 항목이 없어 현행과 동일합니다.');
+    }
+
+    return { year, result: cmp, diff, pct, reasons };
+  });
+}
+
+/* -------------------------------------------------------------------------
+   2) 취득세 (유상취득 / 증여취득 / 상속취득)
+   ------------------------------------------------------------------------- */
+function calcAcquisitionTax(p){
+  const { assetType, acquireType, price, houseCount, isAdjustedArea, exceedsArea85, isSelfFarmed } = p;
+  let rate;
+
+  if (assetType === 'house') {
+    if (acquireType === 'inherit' || acquireType === 'original') rate = 0.028; // 상속·원시 2.8%
+    else if (acquireType === 'gift') rate = (isAdjustedArea && price >= 300000000) ? 0.12 : 0.035;
+    else {
+      // 매매(유상취득)
+      if (houseCount >= 2 && isAdjustedArea) rate = houseCount === 2 ? 0.08 : 0.12;
+      else if (houseCount >= 4 && !isAdjustedArea) rate = 0.12;
+      else {
+        if (price <= 600000000) rate = 0.01;
+        else if (price <= 900000000) rate = (price / 300000000 * 2 - 3) / 100;
+        else rate = 0.03;
+      }
+    }
+  } else if (assetType === 'officetel') {
+    if (acquireType === 'inherit' || acquireType === 'original') rate = 0.028;
+    else if (acquireType === 'gift') rate = 0.035;
+    else rate = 0.04; // 매매 고정 4% (주택법상 주택 아님, 다주택 중과 대상 아님)
+  } else if (assetType === 'farmland') {
+    if (acquireType === 'inherit') rate = 0.023; // 농지 상속은 2.3%로 일반상속(2.8%)과 다름
+    else if (acquireType === 'original') rate = 0.028;
+    else if (acquireType === 'gift') rate = 0.035;
+    else rate = isSelfFarmed ? 0.015 : 0.03; // 매매: 2년 이상 자경 1.5%, 신규 3%
+  } else {
+    // 그 외 (토지·상가·건물 등 일반)
+    if (acquireType === 'inherit' || acquireType === 'original') rate = 0.028;
+    else if (acquireType === 'gift') rate = 0.035;
+    else rate = 0.04;
+  }
+
+  const base = price;
+  const acquisitionTax = base * rate;
+  const isHouseHeavy = assetType === 'house' && (rate === 0.08 || rate === 0.12);
+
+  // 지방교육세: 주택 유상취득은 취득세율의 1/10, 그 외(무상·원시·비주택)는 (세율-2%)×20% (지방세법 §151①)
+  let localEduTax;
+  if (assetType === 'farmland' && acquireType === 'trade' && isSelfFarmed) {
+    localEduTax = base * 0.001; // 2년 이상 자경 농지 감면 특례 (실무 확인값 0.1%)
+  } else if (assetType === 'house' && acquireType === 'trade' && !isHouseHeavy) {
+    localEduTax = acquisitionTax * 0.1;
+  } else if (isHouseHeavy) {
+    localEduTax = base * 0.004;
+  } else {
+    localEduTax = base * Math.max(rate - 0.02, 0) * 0.2;
+  }
+
+  // 농어촌특별세: 주택은 전용 85㎡ 초과 시만, 그 외 자산은 규모 무관 0.2% (농특세법 §5)
+  let ruralTax;
+  if (assetType === 'farmland' && acquireType === 'trade' && isSelfFarmed) {
+    ruralTax = 0;
+  } else if (assetType === 'house') {
+    ruralTax = isHouseHeavy
+      ? (exceedsArea85 ? base * (rate === 0.12 ? 0.01 : 0.006) : 0)
+      : (exceedsArea85 ? base * 0.002 : 0);
+  } else {
+    ruralTax = base * 0.002;
+  }
+
+  // 생애최초 구입 감면 (지방세특례제한법 §36의3): 주택·매매·1주택·12억원 이하, 취득세 200만원 한도 감면
+  let firstTimeDeduction = 0;
+  if (p.isFirstTime && assetType === 'house' && acquireType === 'trade' && houseCount === 1 && price <= 1200000000) {
+    firstTimeDeduction = Math.min(acquisitionTax, 2000000);
+  }
+
+  const total = acquisitionTax + localEduTax + ruralTax - firstTimeDeduction;
+
+  const localEduPct = base > 0 ? (localEduTax / base * 100) : 0;
+  const ruralPct = base > 0 ? (ruralTax / base * 100) : 0;
+
+  const rows = [
+    ['취득세율', (rate*100).toFixed(2) + '%'],
+    ['취득세', won(acquisitionTax)],
+    [`지방교육세 (취득가액의 ${localEduPct.toFixed(2)}%)`, won(localEduTax)],
+    [`농어촌특별세 (취득가액의 ${ruralPct.toFixed(2)}%)`, won(ruralTax)],
+  ];
+  if (firstTimeDeduction > 0) rows.push(['생애최초 구입 감면', wonMinus(firstTimeDeduction)]);
+
+  return { rate, acquisitionTax, localEduTax, ruralTax, firstTimeDeduction, total, rows };
+}
+
+/* -------------------------------------------------------------------------
+   3) 증여세 (부담부증여 채무인수액 반영 가능)
+   ------------------------------------------------------------------------- */
+function calcGiftTax(p){
+  const deductionTable = {
+    spouse: 600000000,
+    lineal_adult: 50000000,
+    lineal_minor: 20000000,
+    other_relative: 10000000,
+  };
+  const debt = p.debt || 0; // 부담부증여 시 수증자가 인수한 채무액 (상증세법 §47③)
+  const netGiftValue = clamp0(p.giftValue - debt);
+  const cap = clamp0(deductionTable[p.relation] - p.priorUsed);
+  const relationDeduction = Math.min(cap, netGiftValue);
+
+  // 혼인·출산 증여재산공제 (§53의2, 2024.1.1 시행): 혼인신고일 전후 2년(출산은 출생일부터 2년) 이내
+  // 직계존속 증여에 한해 기존 공제와 별도로 최대 1억원 추가 공제 (혼인+출산 합산 1억 한도)
+  const marriageChildDeduction = (p.useMarriageChildDeduction && (p.relation === 'lineal_adult' || p.relation === 'lineal_minor'))
+    ? Math.min(100000000, clamp0(netGiftValue - relationDeduction))
+    : 0;
+
+  const deduction = relationDeduction + marriageChildDeduction;
+  const taxBase = clamp0(netGiftValue - deduction);
+  const tax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
+  const reportCredit = tax * 0.03; // 신고세액공제 3% (§69)
+  const total = tax - reportCredit;
+
+  const rows = [
+    ['증여재산가액', won(p.giftValue)],
+  ];
+  if (debt > 0) rows.push(['인수한 채무액', wonMinus(debt)]);
+  rows.push(['증여재산공제', wonMinus(relationDeduction)]);
+  if (marriageChildDeduction > 0) rows.push(['혼인·출산 증여재산공제', wonMinus(marriageChildDeduction)]);
+  rows.push(
+    ['과세표준', won(taxBase)],
+    ['산출세액', won(tax)],
+    ['신고세액공제 (3%)', wonMinus(reportCredit)],
+  );
+
+  return { debt, netGiftValue, relationDeduction, marriageChildDeduction, deduction, taxBase, tax, reportCredit, total, rows };
+}
+
+/* -------------------------------------------------------------------------
+   4) 상속세 — 일괄공제(5억)와 인적공제(기초2억+자녀·미성년·연로자) 중 큰 금액 자동 적용
+   ------------------------------------------------------------------------- */
+function calcInheritanceTax(p){
+  // 상속세 과세가액 = 상속재산가액 + 사전증여재산가산액 - 공과금 - 장례비용 - 채무 (§13, §14)
+  const priorGift = p.priorGift || 0; // 상속인 10년·비상속인 5년 이내 사전증여재산 가산
+  const publicDues = p.publicDues || 0; // 공과금
+  const funeralCost = p.funeralCost || 0; // 장례비용 (§14, 통상 500만~1500만원 한도)
+  const debt = p.debt || 0; // 채무
+  const taxableEstate = clamp0(p.totalEstate + priorGift - publicDues - funeralCost - debt);
+
+  const lumpSum = 500000000; // 일괄공제 (§21)
+  const basicDeduction = 200000000; // 기초공제 (§18)
+  const childDeduction = (p.childCount || 0) * 50000000; // 자녀공제 1인당 5천만 (§20)
+  const minorDeduction = (p.minorRemainingYears || 0) * 10000000; // 미성년자공제: 잔여연수 합 × 1천만
+  const elderlyDeduction = (p.elderlyCount || 0) * 50000000; // 연로자공제(65세 이상) 1인당 5천만
+  const individualTotal = basicDeduction + childDeduction + minorDeduction + elderlyDeduction;
+  const generalDeduction = Math.max(lumpSum, individualTotal); // 일괄공제 vs 인적공제 중 큰 것 (§21②)
+
+  const spouseDeduction = p.hasSpouse ? Math.min(Math.max(p.spouseShare, 500000000), 3000000000, taxableEstate) : 0; // 배우자상속공제 5억~30억 (§19)
+  const financialDeduction = Math.min(Math.max((p.financialAsset || 0) * 0.2, (p.financialAsset || 0) > 0 ? 20000000 : 0), 200000000); // 금융재산상속공제 (§22): 순금융재산의 20%와 2천만원 중 큰 금액, 최대 2억
+  const totalDeduction = Math.min(generalDeduction + spouseDeduction + financialDeduction, taxableEstate);
+  const taxBase = clamp0(taxableEstate - totalDeduction);
+  const grossTax = progressiveTax(taxBase, ESTATE_GIFT_BRACKETS);
+
+  const giftTaxCredit = Math.min(p.giftTaxCredit || 0, grossTax); // 증여세액공제 (§28, 사전증여분 기납부세액 이중과세 조정)
+  const taxAfterCredit = clamp0(grossTax - giftTaxCredit);
+  const reportCredit = taxAfterCredit * 0.03; // 신고세액공제 3% (§69)
+  const total = taxAfterCredit - reportCredit;
+
+  const rows = [
+    ['상속재산가액', won(p.totalEstate)],
+  ];
+  if (priorGift > 0) rows.push(['사전증여재산가산액', won(priorGift)]);
+  if (publicDues > 0) rows.push(['공과금', wonMinus(publicDues)]);
+  if (funeralCost > 0) rows.push(['장례비용', wonMinus(funeralCost)]);
+  if (debt > 0) rows.push(['채무', wonMinus(debt)]);
+  rows.push(['상속세 과세가액', won(taxableEstate)]);
+  rows.push([generalDeduction > lumpSum ? '인적공제 (일괄공제보다 유리)' : '일괄공제', wonMinus(generalDeduction)]);
+  rows.push(['배우자상속공제', wonMinus(spouseDeduction)]);
+  if (financialDeduction > 0) rows.push(['금융재산상속공제', wonMinus(financialDeduction)]);
+  rows.push(
+    ['과세표준', won(taxBase)],
+    ['산출세액', won(grossTax)],
+  );
+  if (giftTaxCredit > 0) rows.push(['증여세액공제', wonMinus(giftTaxCredit)]);
+  rows.push(['신고세액공제 (3%)', wonMinus(reportCredit)]);
+
+  return {
+    taxableEstate, lumpSum, individualTotal, generalDeduction, spouseDeduction, financialDeduction,
+    totalDeduction, taxBase, grossTax, giftTaxCredit, reportCredit, total, rows
+  };
+}
+
+/* -------------------------------------------------------------------------
+   5) 보유세 — 재산세 (지방세법 §111) + 종합부동산세 (종부세법 §8, §9)
+   ------------------------------------------------------------------------- */
+const PROPERTY_TAX_STANDARD = [
+  { limit: 60000000,   rate: 0.001,  deduction: 0 },
+  { limit: 150000000,  rate: 0.0015, deduction: 30000 },
+  { limit: 300000000,  rate: 0.0025, deduction: 195000 },
+  { limit: Infinity,   rate: 0.004,  deduction: 570000 },
+];
+const PROPERTY_TAX_ONEHOUSE = [
+  { limit: 60000000,   rate: 0.0005, deduction: 0 },
+  { limit: 150000000,  rate: 0.001,  deduction: 30000 },
+  { limit: 300000000,  rate: 0.002,  deduction: 120000 },
+  { limit: Infinity,   rate: 0.0035, deduction: 420000 },
+];
+const COMP_TAX_UNDER2 = [
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 900000 },
+  { limit: 1200000000,  rate: 0.010,  deduction: 2700000 },
+  { limit: 2500000000,  rate: 0.013,  deduction: 6300000 },
+  { limit: 5000000000,  rate: 0.015,  deduction: 11300000 },
+  { limit: 9400000000,  rate: 0.020,  deduction: 36300000 },
+  { limit: Infinity,    rate: 0.027,  deduction: 101100000 },
+];
+const COMP_TAX_OVER3 = [
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 900000 },
+  { limit: 1200000000,  rate: 0.010,  deduction: 2700000 },
+  { limit: 2500000000,  rate: 0.020,  deduction: 15300000 },
+  { limit: 5000000000,  rate: 0.030,  deduction: 40300000 },
+  { limit: 9400000000,  rate: 0.040,  deduction: 90300000 },
+  { limit: Infinity,    rate: 0.050,  deduction: 184300000 },
+];
+
+/* 2026년 세제개편안 — 종부세 세율표 (상세본 확인, §9①②)
+   '27년: 2주택이하/3주택이상 구분 유지, 6~12억 구간 세율 인상(1.0%→1.3%)
+   '28년 이후: 주택수 구분 폐지, 아래 OVER3와 동일한 단일세율표 적용 */
+const COMP_TAX_2027_UNDER2 = [
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 600000 },
+  { limit: 1200000000,  rate: 0.013,  deduction: 4200000 },
+  { limit: 2500000000,  rate: 0.015,  deduction: 6600000 },
+  { limit: 5000000000,  rate: 0.020,  deduction: 19100000 },
+  { limit: 9400000000,  rate: 0.027,  deduction: 54100000 },
+  { limit: Infinity,    rate: 0.035,  deduction: 129300000 },
+];
+const COMP_TAX_2027_OVER3 = [ // '28년 이후 단일세율표와 동일
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 600000 },
+  { limit: 1200000000,  rate: 0.013,  deduction: 4200000 },
+  { limit: 2500000000,  rate: 0.020,  deduction: 12600000 },
+  { limit: 5000000000,  rate: 0.030,  deduction: 37600000 },
+  { limit: 9400000000,  rate: 0.040,  deduction: 87600000 },
+  { limit: Infinity,    rate: 0.050,  deduction: 181600000 },
+];
+
+/* -------------------------------------------------------------------------
+   calcHoldingTaxDetailed — 세대 단위, 자산(주택/토지/건물)별·소유자별 보유세
+   - 1세대1주택 판정: 세대 전체 "주택" 자산이 정확히 1건일 때 자동 적용
+   - 재산세: 자산(물건) 전체 기준으로 세액 산출 후 지분율대로 소유자에게 안분 (실무 관행)
+   - 종부세: 주택 자산만 인별로 지분 합산해서 계산 (토지·건물의 종부세는 별도 확인 필요, 미반영)
+   ------------------------------------------------------------------------- */
+function calcHoldingTaxDetailed(state){
+  const assets = state.assets || [];
+  const houseAssets = assets.filter(a => a.type === 'house');
+  const isOneHouseHousehold = houseAssets.length === 1;
+  const houseCount = houseAssets.length;
+
+  const ownerTotals = {}; // key: 소유자명 -> { name, propertyTax, compTax, houseShareSum }
+  function getOwner(name){
+    if (!ownerTotals[name]) ownerTotals[name] = { name, propertyTax: 0, compTax: 0, houseShareSum: 0 };
+    return ownerTotals[name];
+  }
+
+  const assetRows = [];
+  let grandPropertyTax = 0;
+
+  assets.forEach(asset => {
+    const owners = (asset.owners || [])
+      .filter(o => o.sharePct > 0)
+      .map((o, idx) => ({ ...o, name: (o.name && o.name.trim()) || `소유자${idx + 1}` }));
+    const shareTotal = owners.reduce((s,o)=>s+o.sharePct,0) || 100;
+
+    let wholeBase, wholeBrackets, wholeTaxLabel;
+    if (asset.type === 'house') {
+      const fmvRatio = isOneHouseHousehold
+        ? (asset.publicPrice <= 300000000 ? 0.43 : asset.publicPrice <= 600000000 ? 0.44 : 0.45)
+        : 0.60;
+      wholeBase = asset.publicPrice * fmvRatio;
+      wholeBrackets = isOneHouseHousehold ? PROPERTY_TAX_ONEHOUSE : PROPERTY_TAX_STANDARD;
+    } else {
+      // 토지·건물: 공정시장가액비율 70% (지방세법 시행령 §109), 세율은 간이 근사치(0.3%) — 종합/별도합산·분리과세 구분 미반영
+      wholeBase = asset.publicPrice * 0.70;
+      wholeBrackets = [{ limit: Infinity, rate: 0.003, deduction: 0 }];
+    }
+    const wholePropertyTaxRaw = progressiveTax(wholeBase, wholeBrackets);
+    const wholeLocalEdu = wholePropertyTaxRaw * 0.2;
+    const wholeUrban = state.isUrbanArea ? wholeBase * 0.0014 : 0;
+    const wholePropertyTotal = wholePropertyTaxRaw + wholeLocalEdu + wholeUrban;
+    grandPropertyTax += wholePropertyTotal;
+
+    const ownerShares = owners.map(o => {
+      const pct = o.sharePct / shareTotal * 100;
+      const amount = wholePropertyTotal * (pct / 100);
+      const owner = getOwner(o.name);
+      owner.propertyTax += amount;
+      if (asset.type === 'house') owner.houseShareSum += asset.publicPrice * (pct / 100);
+      return { name: o.name, relation: o.relation, pct, amount };
+    });
+
+    assetRows.push({
+      type: asset.type, desc: asset.desc, publicPrice: asset.publicPrice,
+      propertyTaxTotal: wholePropertyTotal, ownerShares,
+    });
+  });
+
+  // 종부세: 주택만, 인별 지분 합산
+  // 2026년 세제개편안(발표안, 미확정) 반영: 기본공제·공정시장가액비율·세율표가 '27년, '28년부터 각각 달라짐
+  const reformYear = state.reformYear || 2026;
+  const deduction = isOneHouseHousehold
+    ? (reformYear >= 2027 ? (state.isResident ? 1400000000 : 900000000) : 1200000000)
+    : 900000000; // '기타' 공제 확대식(4억+5억×비중)은 세부 산정요건 복잡해 미반영, 현행 9억으로 근사
+  const ctFmvRatio = reformYear < 2027
+    ? 0.60
+    : (houseCount >= 3 ? (reformYear === 2027 ? 0.70 : 0.80) : 0.70); // 3주택+조정지역자 80%(28년~)는 조정지역 여부 미반영, 3주택 이상이면 적용으로 근사
+  const ctBrackets = reformYear < 2027
+    ? (houseCount >= 3 ? COMP_TAX_OVER3 : COMP_TAX_UNDER2)
+    : (reformYear === 2027 ? (houseCount >= 3 ? COMP_TAX_2027_OVER3 : COMP_TAX_2027_UNDER2) : COMP_TAX_2027_OVER3);
+
+  let grandCompTax = 0;
+  Object.values(ownerTotals).forEach(owner => {
+    if (owner.houseShareSum <= 0) return;
+    const ctBase = clamp0(owner.houseShareSum - deduction) * ctFmvRatio;
+    const compTaxRaw = progressiveTax(ctBase, ctBrackets);
+    const ruralTax = compTaxRaw * 0.2;
+    owner.compTax = compTaxRaw + ruralTax;
+    grandCompTax += owner.compTax;
+  });
+
+  const grandTotal = grandPropertyTax + grandCompTax;
+  const ownerList = Object.values(ownerTotals).map(o => ({
+    ...o, total: o.propertyTax + o.compTax
+  }));
+
+  return {
+    isOneHouseHousehold, houseCount, deduction, reformYear, ctFmvRatio, assetRows, ownerList,
+    grandPropertyTax, grandCompTax, grandTotal,
+  };
+}
+
+/* -------------------------------------------------------------------------
+   보유세 개편안 비교 — 2026(현행) 대비 지정 연도들의 세액 차이와 증감 사유 생성
+   ------------------------------------------------------------------------- */
+function compareHoldingReform(state, baseResult, compareYears){
+  return compareYears.map(year => {
+    const cmp = calcHoldingTaxDetailed({ ...state, reformYear: year });
+    const diff = cmp.grandTotal - baseResult.grandTotal;
+    const pct = baseResult.grandTotal !== 0 ? (diff / baseResult.grandTotal * 100) : 0;
+    const reasons = [];
+
+    if (baseResult.deduction !== cmp.deduction) {
+      reasons.push(`종부세 기본공제가 ${won(baseResult.deduction)} → ${won(cmp.deduction)}로 변경됨`);
+    }
+    if (baseResult.ctFmvRatio !== cmp.ctFmvRatio) {
+      reasons.push(`종부세 공정시장가액비율이 ${(baseResult.ctFmvRatio*100).toFixed(0)}% → ${(cmp.ctFmvRatio*100).toFixed(0)}%로 상향됨`);
+    }
+    if (year >= 2028 && baseResult.houseCount < 3) {
+      reasons.push('2028년부터 종부세 세율표에서 주택수 구분이 폐지되어 세율 구조가 달라짐');
+    }
+    if (reasons.length === 0) {
+      reasons.push('입력하신 조건에서는 해당 연도 개편안이 적용되는 항목이 없어 현행과 동일합니다.');
+    }
+
+    return { year, result: cmp, diff, pct, reasons };
+  });
+}
+
+</script>
+<script>
+
+attachThousandsAll('#t-transferPrice, #t-acquisitionPrice, #t-necessaryExpense');
+
+const houseOnlyFields = document.getElementById('t-houseOnlyFields');
+const assetHintText = {
+  house: '주택: 2년 이상 보유 시 기본세율(6~45%)+장기보유특별공제 적용, 1년 미만 70%·1~2년 60% 단기세율. 실거래가 12억원 초과분은 1세대1주택이라도 안분과세되며, 조정대상지역 취득 주택은 2년 이상 거주해야 비과세 특례가 인정됩니다.',
+  presale: '분양권: 보유기간과 무관하게 60%(1년 미만 70%) 단일세율 고정, 장기보유특별공제 없음',
+  right: '조합원입주권: 2년 이상 보유 시 기본세율+일반 장기보유특별공제(연 2%), 1주택 특례는 미적용',
+  nonbiz_land: '비사업용토지: 기본세율에 10%p 가산, 단기세율은 1년 미만 50%·1~2년 40%로 주택보다 낮음',
+  other_asset: '기타자산(상가·사업용토지 등): 기본세율 적용, 단기세율은 1년 미만 50%·1~2년 40%',
+};
+document.querySelectorAll('input[name=assetType]').forEach(function(radio){
+  radio.addEventListener('change', function(){
+    const isHouse = this.value === 'house';
+    houseOnlyFields.style.display = isHouse ? 'contents' : 'none';
+    document.getElementById('t-assetHint').textContent = assetHintText[this.value];
+  });
+});
+
+document.getElementById('form-transfer').addEventListener('submit', function(e){
+  e.preventDefault();
+  const assetType = document.querySelector('input[name=assetType]:checked').value;
+  const p = {
+    assetType,
+    transferPrice: rawNumber(document.getElementById('t-transferPrice')),
+    acquisitionPrice: rawNumber(document.getElementById('t-acquisitionPrice')),
+    necessaryExpense: rawNumber(document.getElementById('t-necessaryExpense')),
+    holdYears: Number(document.getElementById('t-holdYears').value || 0),
+    liveYears: Number(document.getElementById('t-liveYears').value || 0),
+    houseCount: Number(document.querySelector('input[name="t-houseCount"]:checked').value),
+    isOneHouse: document.querySelector('input[name=isOneHouse]:checked').value === '1',
+    isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+    reformYear: 2026,
+  };
+  const r = calcTransferTax(p);
+  document.getElementById('t-total').textContent = won(r.total);
+  document.getElementById('t-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">합계 (지방소득세 포함, 현행법 2026)</span><span class="v">${won(r.total)}</span></div>`;
+
+  const compareYears = Array.from(document.querySelectorAll('input[name=compareYear]:checked')).map(el => Number(el.value));
+  const compareResults = compareTransferReform(p, r, compareYears);
+  document.getElementById('t-reform-compare').innerHTML = compareResults.map(c => {
+    const arrow = c.diff > 0 ? '▲ 증가' : (c.diff < 0 ? '▼ 감소' : '변동 없음');
+    const arrowColor = c.diff > 0 ? '#A23B2E' : (c.diff < 0 ? '#1D77B5' : 'var(--muted)');
+    return `
+      <div class="result show" style="margin-top:14px; background:#fff;">
+        <h3>${c.year}년 개편안 적용 시</h3>
+        <div class="headline" style="font-size:26px;">${won(c.result.total)}</div>
+        <p style="font-size:13.5px; font-weight:700; color:${arrowColor}; margin:4px 0 10px;">
+          현행 대비 ${arrow} ${won(Math.abs(c.diff))} (${c.pct >= 0 ? '+' : ''}${c.pct.toFixed(1)}%)
+        </p>
+        <div class="breakdown">
+          ${c.reasons.map(rs => `<div class="row"><span class="k">사유</span><span class="v" style="font-weight:400; text-align:right;">${rs}</span></div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('result-transfer').classList.add('show');
+  document.getElementById('result-transfer').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+
+attachThousandsAll('#a-price');
+
+const houseOnlyFieldIds = ['a-houseCountField', 'a-areaField', 'a-adjustedField'];
+const typeHintText = {
+  house: {
+    trade: '주택 매매: 6억이하 1%, 6~9억 구간산식, 9억초과 3% (조정지역 다주택 8·12% 중과)',
+    gift: '주택 증여: 3.5% (조정대상지역 내 시가표준액 3억원 이상은 12%)',
+    inherit: '주택 상속: 2.8%',
+    original: '주택 원시취득(신축): 2.8%',
+  },
+  officetel: {
+    trade: '오피스텔 매매: 4.0% 고정 (주택법상 주택이 아니라 다주택·조정지역 중과 대상 아님)',
+    gift: '오피스텔 증여: 3.5%',
+    inherit: '오피스텔 상속: 2.8%',
+    original: '오피스텔 원시취득: 2.8%',
+  },
+  farmland: {
+    trade: '농지 매매: 신규 3%, 2년 이상 자경 시 1.5%',
+    gift: '농지 증여: 3.5%',
+    inherit: '농지 상속: 2.3% (일반 상속 2.8%보다 낮음)',
+    original: '농지 원시취득: 2.8%',
+  },
+  other: {
+    trade: '그 외(상가·토지·건물) 매매: 4.0%',
+    gift: '그 외 증여: 3.5%',
+    inherit: '그 외 상속: 2.8%',
+    original: '그 외 원시취득(신축): 2.8%',
+  },
+};
+
+function refreshAcqUI(){
+  const assetType = document.querySelector('input[name=assetType]:checked').value;
+  const acquireType = document.querySelector('input[name=acquireType]:checked').value;
+  const isHouse = assetType === 'house';
+  const isFarmland = assetType === 'farmland';
+
+  houseOnlyFieldIds.forEach(id => { document.getElementById(id).style.display = isHouse ? '' : 'none'; });
+  document.getElementById('a-firstTimeField').style.display = (isHouse && acquireType === 'trade') ? '' : 'none';
+  document.getElementById('a-farmingField').style.display = (isFarmland && acquireType === 'trade') ? '' : 'none';
+  document.getElementById('a-typeHint').textContent = typeHintText[assetType][acquireType];
+}
+document.querySelectorAll('input[name=assetType], input[name=acquireType]').forEach(function(radio){
+  radio.addEventListener('change', refreshAcqUI);
+});
+refreshAcqUI();
+
+document.getElementById('form-acq').addEventListener('submit', function(e){
+  e.preventDefault();
+  const p = {
+    assetType: document.querySelector('input[name=assetType]:checked').value,
+    acquireType: document.querySelector('input[name=acquireType]:checked').value,
+    price: rawNumber(document.getElementById('a-price')),
+    houseCount: Number(document.getElementById('a-houseCount').value || 1),
+    exceedsArea85: document.querySelector('input[name=exceedsArea85]:checked').value === '1',
+    isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+    isSelfFarmed: document.querySelector('input[name=isSelfFarmed]:checked').value === '1',
+    isFirstTime: document.querySelector('input[name=isFirstTime]:checked').value === '1',
+  };
+  const r = calcAcquisitionTax(p);
+  document.getElementById('a-total').textContent = won(r.total);
+  document.getElementById('a-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">합계</span><span class="v">${won(r.total)}</span></div>`;
+  document.getElementById('result-acq').classList.add('show');
+  document.getElementById('result-acq').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+
+attachThousandsAll('#g-giftValue, #g-priorUsed, #g-debt');
+document.getElementById('form-gift').addEventListener('submit', function(e){
+  e.preventDefault();
+  const p = {
+    giftValue: rawNumber(document.getElementById('g-giftValue')),
+    relation: document.getElementById('g-relation').value,
+    priorUsed: rawNumber(document.getElementById('g-priorUsed')),
+    debt: rawNumber(document.getElementById('g-debt')),
+    useMarriageChildDeduction: document.querySelector('input[name=useMarriageChildDeduction]:checked').value === '1',
+  };
+  const r = calcGiftTax(p);
+  document.getElementById('g-total').textContent = won(r.total);
+  document.getElementById('g-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">최종 납부세액</span><span class="v">${won(r.total)}</span></div>`;
+  document.getElementById('result-gift').classList.add('show');
+  document.getElementById('result-gift').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+
+attachThousandsAll('#i-totalEstate, #i-spouseShare, #i-priorGift, #i-publicDues, #i-funeralCost, #i-debt, #i-financialAsset, #i-giftTaxCredit');
+document.getElementById('form-inherit').addEventListener('submit', function(e){
+  e.preventDefault();
+  const p = {
+    totalEstate: rawNumber(document.getElementById('i-totalEstate')),
+    priorGift: rawNumber(document.getElementById('i-priorGift')),
+    publicDues: rawNumber(document.getElementById('i-publicDues')),
+    funeralCost: rawNumber(document.getElementById('i-funeralCost')),
+    debt: rawNumber(document.getElementById('i-debt')),
+    hasSpouse: document.querySelector('input[name=hasSpouse]:checked').value === '1',
+    spouseShare: rawNumber(document.getElementById('i-spouseShare')),
+    childCount: Number(document.getElementById('i-childCount').value || 0),
+    minorRemainingYears: Number(document.getElementById('i-minorYears').value || 0),
+    elderlyCount: Number(document.getElementById('i-elderlyCount').value || 0),
+    financialAsset: rawNumber(document.getElementById('i-financialAsset')),
+    giftTaxCredit: rawNumber(document.getElementById('i-giftTaxCredit')),
+  };
+  const r = calcInheritanceTax(p);
+  document.getElementById('i-total').textContent = won(r.total);
+  document.getElementById('i-breakdown').innerHTML = r.rows.map(([k,v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('') + `<div class="row total"><span class="k">최종 납부세액</span><span class="v">${won(r.total)}</span></div>`;
+  document.getElementById('result-inherit').classList.add('show');
+  document.getElementById('result-inherit').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+
+const assetListEl = document.getElementById('asset-list');
+let assetSeq = 0;
+
+function ownerRowHtml(assetId, ownerIdx, defaultName, defaultRelation, defaultPct){
+  return `
+    <div class="owner-row" data-owner-idx="${ownerIdx}" style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+      <input type="text" class="owner-name" placeholder="성명" value="${defaultName||''}" style="flex:1.2; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
+      <select class="owner-relation" style="flex:1; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
+        <option value="본인" ${defaultRelation==='본인'?'selected':''}>본인</option>
+        <option value="배우자(남편)" ${defaultRelation==='배우자(남편)'?'selected':''}>배우자(남편)</option>
+        <option value="배우자(아내)" ${defaultRelation==='배우자(아내)'?'selected':''}>배우자(아내)</option>
+        <option value="자녀" ${defaultRelation==='자녀'?'selected':''}>자녀</option>
+        <option value="부모" ${defaultRelation==='부모'?'selected':''}>부모</option>
+        <option value="기타" ${defaultRelation==='기타'?'selected':''}>기타</option>
+      </select>
+      <input type="number" class="owner-pct" placeholder="지분%" value="${defaultPct!=null?defaultPct:100}" min="0" max="100" style="width:70px; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
+      <span style="font-size:13px; color:var(--muted);">%</span>
+      <button type="button" class="owner-remove-btn" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0 4px;" title="소유자 삭제">&times;</button>
+    </div>`;
+}
+
+function assetRowHtml(assetId){
+  return `
+  <div class="calc-panel asset-row" data-asset-id="${assetId}" style="margin:0 0 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <span style="font-weight:700; color:var(--brand-deep); font-size:14px;">자산 ${assetId}</span>
+      <button type="button" class="asset-remove-btn" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px;">삭제</button>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label>물건 종류</label>
+        <select class="asset-type">
+          <option value="house">주택</option>
+          <option value="land">토지</option>
+          <option value="building">건물</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>내용 (예: OO아파트 OO동 OO호)</label>
+        <input type="text" class="asset-desc" placeholder="예: 행복아파트 101동 1001호">
+      </div>
+      <div class="field full">
+        <label>기준시가(공시가격, 원)</label>
+        <input type="text" inputmode="numeric" class="asset-price" placeholder="예: 1,200,000,000">
+        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <label style="font-size:13px; color:var(--muted);">소유자 (지분 구성)</label>
+      <div class="owner-list"></div>
+      <button type="button" class="add-owner-btn" style="margin-top:8px; background:none; border:1px dashed var(--border-strong); color:var(--brand); padding:7px 12px; border-radius:20px; font-size:12.5px; cursor:pointer;">+ 소유자 추가</button>
+    </div>
+  </div>`;
+}
+
+function addAsset(){
+  assetSeq++;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = assetRowHtml(assetSeq);
+  const assetEl = wrap.firstElementChild;
+  assetListEl.appendChild(assetEl);
+  addOwner(assetEl, '', '본인', 100);
+
+  assetEl.querySelector('.asset-remove-btn').addEventListener('click', () => assetEl.remove());
+  assetEl.querySelector('.add-owner-btn').addEventListener('click', () => addOwner(assetEl));
+}
+
+function addOwner(assetEl, name, relation, pct){
+  const ownerListEl = assetEl.querySelector('.owner-list');
+  const idx = ownerListEl.children.length;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = ownerRowHtml(assetEl.dataset.assetId, idx, name, relation, pct);
+  const ownerEl = wrap.firstElementChild;
+  ownerListEl.appendChild(ownerEl);
+  ownerEl.querySelector('.owner-remove-btn').addEventListener('click', () => {
+    if (ownerListEl.children.length > 1) ownerEl.remove();
+  });
+}
+
+document.getElementById('add-asset-btn').addEventListener('click', () => addAsset());
+addAsset(); // 최초 1개 자산 기본 표시
+
+document.getElementById('form-holding').addEventListener('submit', function(e){
+  e.preventDefault();
+  const isUrbanArea = document.querySelector('input[name=isUrbanArea]:checked').value === '1';
+  const isResident = document.querySelector('input[name=isResident]:checked').value === '1';
+
+  const assets = Array.from(document.querySelectorAll('.asset-row')).map(assetEl => {
+    const priceInput = assetEl.querySelector('.asset-price');
+    const owners = Array.from(assetEl.querySelectorAll('.owner-row')).map((ownerEl, idx) => ({
+      name: ownerEl.querySelector('.owner-name').value.trim() || `소유자${idx + 1}`,
+      relation: ownerEl.querySelector('.owner-relation').value,
+      sharePct: Number(ownerEl.querySelector('.owner-pct').value || 0),
+    }));
+    return {
+      type: assetEl.querySelector('.asset-type').value,
+      desc: assetEl.querySelector('.asset-desc').value.trim(),
+      publicPrice: rawNumber(priceInput),
+      owners,
+    };
+  }).filter(a => a.publicPrice > 0);
+
+  if (assets.length === 0) {
+    alert('자산을 1건 이상 입력해주세요.');
+    return;
+  }
+
+  const state = { isUrbanArea, assets, isResident, reformYear: 2026 };
+  const r = calcHoldingTaxDetailed(state);
+
+  document.getElementById('h-total').textContent = won(r.grandTotal);
+
+  document.getElementById('h-asset-breakdown').innerHTML = r.assetRows.map(a => {
+    const typeLabel = a.type === 'house' ? '주택' : (a.type === 'land' ? '토지' : '건물');
+    const ownerLines = a.ownerShares.map(o =>
+      `<div class="row"><span class="k">　└ ${o.name}(${o.relation}) ${o.pct.toFixed(0)}%</span><span class="v">${won(o.amount)}</span></div>`
+    ).join('');
+    return `<div class="breakdown" style="margin-top:10px;">
+      <div class="row total" style="border-top:none;"><span class="k">[${typeLabel}] ${a.desc || '(내용 미입력)'}</span><span class="v">${won(a.propertyTaxTotal)}</span></div>
+      ${ownerLines}
+    </div>`;
+  }).join('');
+
+  document.getElementById('h-owner-breakdown').innerHTML =
+    '<h3 style="margin-top:6px;">소유자별 합계</h3>' +
+    r.ownerList.map(o => `
+      <div class="breakdown" style="margin-top:6px;">
+        <div class="row"><span class="k">${o.name} — 재산세</span><span class="v">${won(o.propertyTax)}</span></div>
+        <div class="row"><span class="k">${o.name} — 종합부동산세</span><span class="v">${won(o.compTax)}</span></div>
+        <div class="row total"><span class="k">${o.name} 합계</span><span class="v">${won(o.total)}</span></div>
+      </div>`
+    ).join('');
+
+  document.getElementById('h-onehouse-note').textContent = r.isOneHouseHousehold
+    ? `1세대1주택 특례 적용 대상입니다 (세대 전체 보유주택 ${r.houseCount}건, 종부세 기본공제 ${won(r.deduction)} 적용, 현행법 2026 기준)`
+    : `세대 전체 보유주택이 ${r.houseCount}건이라 1세대1주택 특례가 적용되지 않습니다 (종부세 기본공제 ${won(r.deduction)} 적용, 현행법 2026 기준)`;
+
+  const compareYears = Array.from(document.querySelectorAll('input[name=compareYear]:checked')).map(el => Number(el.value));
+  const compareResults = compareHoldingReform(state, r, compareYears);
+  document.getElementById('h-reform-compare').innerHTML = compareResults.map(c => {
+    const arrow = c.diff > 0 ? '▲ 증가' : (c.diff < 0 ? '▼ 감소' : '변동 없음');
+    const arrowColor = c.diff > 0 ? '#A23B2E' : (c.diff < 0 ? '#1D77B5' : 'var(--muted)');
+    return `
+      <div class="result show" style="margin-top:14px; background:#fff;">
+        <h3>${c.year}년 개편안 적용 시 (세대 합계)</h3>
+        <div class="headline" style="font-size:26px;">${won(c.result.grandTotal)}</div>
+        <p style="font-size:13.5px; font-weight:700; color:${arrowColor}; margin:4px 0 10px;">
+          현행 대비 ${arrow} ${won(Math.abs(c.diff))} (${c.pct >= 0 ? '+' : ''}${c.pct.toFixed(1)}%)
+        </p>
+        <div class="breakdown">
+          ${c.reasons.map(rs => `<div class="row"><span class="k">사유</span><span class="v" style="font-weight:400; text-align:right;">${rs}</span></div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('result-holding').classList.add('show');
+  document.getElementById('result-holding').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+// 자산가격 입력창에 콤마 포맷을 동적으로도 적용
+assetListEl.addEventListener('input', function(e){
+  if (e.target.classList.contains('asset-price')) attachThousands(e.target);
+});
+
+
+</script>
+<script>
+function showPage(p){
+  document.querySelectorAll('.preview-page').forEach(function(el){ el.style.display = 'none'; });
+  document.getElementById('page-' + p).style.display = 'block';
+  document.querySelectorAll('.preview-tab').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelector('.preview-tab[data-page="' + p + '"]').classList.add('active');
+  window.scrollTo(0,0);
+}
+function submitLeadDirect(calculatorName, summaryLines){
+  alert('[미리보기 모드] 실제 사이트에서는 여기서 전화번호 입력 후 이메일로 자동 전송됩니다.\n\n계산기: ' + calculatorName + '\n' + summaryLines.join('\n'));
+}
+</script>
+</body>
+</html>

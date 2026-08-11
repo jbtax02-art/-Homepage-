@@ -83,6 +83,9 @@
     <div id="h-reform-compare"></div>
     <p class="cite">근거: 지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
     <p class="disclaimer">※ 간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
+    <div class="print-legal">
+      <b>법적 고지</b> — 본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
+    </div>
     <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
 
@@ -207,8 +210,8 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
 
   const assets = Array.from(document.querySelectorAll('.asset-row')).map(assetEl => {
     const priceInput = assetEl.querySelector('.asset-price');
-    const owners = Array.from(assetEl.querySelectorAll('.owner-row')).map(ownerEl => ({
-      name: ownerEl.querySelector('.owner-name').value.trim(),
+    const owners = Array.from(assetEl.querySelectorAll('.owner-row')).map((ownerEl, idx) => ({
+      name: ownerEl.querySelector('.owner-name').value.trim() || `소유자${idx + 1}`,
       relation: ownerEl.querySelector('.owner-relation').value,
       sharePct: Number(ownerEl.querySelector('.owner-pct').value || 0),
     }));

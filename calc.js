@@ -240,10 +240,13 @@ function calcTransferTax(p){
 
   // 2년 이상 보유: 조정대상지역 다주택 중과 대상이면 장기보유특별공제 자체가 배제됨(§95②),
   // 그 외에는 기본세율 + 장기보유특별공제 (비사업용토지는 기본세율에 10%p 가산)
-  const isMultiHouseHeavy = p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !p.isOneHouse;
+  // 1세대1주택 비과세 특례는 조정대상지역 취득 주택의 경우 2년 이상 거주해야 인정됨 (소득세법 시행령 §154①)
+  const qualifiesOneHouse = p.assetType === 'house' && p.isOneHouse && (!p.isAdjustedArea || p.liveYears >= 2);
+  const oneHouseExceptionFailed = p.assetType === 'house' && p.isOneHouse && !qualifiesOneHouse;
+  const isMultiHouseHeavy = p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !qualifiesOneHouse;
 
   let deductRate = 0, specialDeduction = 0, taxBase, capitalGainsTax, effectiveRatePct;
-  let surchargeAddRate = null, nonbizExcluded = false;
+  let surchargeAddRate = null, nonbizExcluded = false, highValuePortion = null;
 
   if (isMultiHouseHeavy) {
     // 다주택 중과: 장특공제 배제, 과세표준 = 양도차익 - 기본공제만
@@ -263,12 +266,20 @@ function calcTransferTax(p){
     const marginalBand = nonbizBrackets.find(b => taxBase <= b.limit);
     effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
   } else {
-    if (p.assetType === 'house' && p.isOneHouse) {
+    let baseGain = gain; // 장특공제·과세표준 산정에 쓸 기준 양도차익 (고가주택은 안분된 값으로 대체)
+
+    if (qualifiesOneHouse) {
+      // 고가주택(실거래가 12억원 초과): 12억원 초과분에 해당하는 양도차익만 과세 (소득세법 §95③)
+      if (p.transferPrice > 1200000000) {
+        const ratio = (p.transferPrice - 1200000000) / p.transferPrice;
+        baseGain = gain * ratio;
+        highValuePortion = { ratio, taxableGain: baseGain };
+      }
       const holdRate = Math.min(Math.floor(p.holdYears) * settings.oneHouseHoldRate, settings.oneHouseHoldMax);
       const liveRate = Math.min(Math.floor(p.liveYears) * settings.oneHouseLiveRate, settings.oneHouseLiveMax);
       deductRate = p.liveYears >= 2 ? (holdRate + liveRate) : 0;
     } else if (p.assetType === 'house') {
-      // 다주택자 주택(1세대1주택 특례 미해당) — 보유/거주 tier 중 큰 쪽 (§95②, '28년 이후 거주요건 추가)
+      // 다주택자 주택(1세대1주택 특례 미해당, 또는 특례 요건 미충족) — 보유/거주 tier 중 큰 쪽 (§95②, '28년 이후 거주요건 추가)
       const holdRate = (p.holdYears >= 3) ? Math.min(Math.floor(p.holdYears) * settings.multiHoldRate, settings.multiHoldMax) : 0;
       const liveRate = (p.liveYears >= 2) ? Math.min(Math.floor(p.holdYears) * settings.multiLiveRate, settings.multiLiveMax) : 0;
       deductRate = Math.max(holdRate, liveRate);
@@ -276,8 +287,8 @@ function calcTransferTax(p){
       // 조합원입주권·기타자산·비사업용토지(개편 미적용 연도): 일반 2%/년, 최대 30% — 이번 개편안에서 세율 변동 없음
       deductRate = p.holdYears >= 3 ? Math.min(Math.floor(p.holdYears) * 0.02, 0.30) : 0;
     }
-    specialDeduction = gain * deductRate;
-    taxBase = clamp0(gain - specialDeduction - basicDeduction);
+    specialDeduction = baseGain * deductRate;
+    taxBase = clamp0(baseGain - specialDeduction - basicDeduction);
 
     const brackets = (p.assetType === 'nonbiz_land')
       ? INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.10})) // 비사업용토지 +10%p (§104①8, 개편 전)
@@ -293,6 +304,12 @@ function calcTransferTax(p){
   const rows = [
     ['양도차익', won(gain)],
   ];
+  if (oneHouseExceptionFailed) {
+    rows.push(['1세대1주택 비과세 특례', '미적용 (조정대상지역 취득주택은 2년 이상 거주 필요)']);
+  }
+  if (highValuePortion) {
+    rows.push(['12억원 초과분 과세대상 양도차익', won(highValuePortion.taxableGain) + ` (전체의 ${(highValuePortion.ratio*100).toFixed(1)}%)`]);
+  }
   if (isMultiHouseHeavy) {
     rows.push(['장기보유특별공제', '배제 (다주택 중과 대상)']);
   } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
@@ -315,6 +332,7 @@ function calcTransferTax(p){
     gain, deductRate, specialDeduction, basicDeduction, taxBase,
     capitalGainsTax, localIncomeTax, total, isMultiHouseHeavy,
     surchargeAddRate, nonbizExcluded, isExpandedBasicDeduction,
+    qualifiesOneHouse, oneHouseExceptionFailed, highValuePortion,
     rows
   };
 }
@@ -610,7 +628,9 @@ function calcHoldingTaxDetailed(state){
   let grandPropertyTax = 0;
 
   assets.forEach(asset => {
-    const owners = (asset.owners || []).filter(o => o.name && o.sharePct > 0);
+    const owners = (asset.owners || [])
+      .filter(o => o.sharePct > 0)
+      .map((o, idx) => ({ ...o, name: (o.name && o.name.trim()) || `소유자${idx + 1}` }));
     const shareTotal = owners.reduce((s,o)=>s+o.sharePct,0) || 100;
 
     let wholeBase, wholeBrackets, wholeTaxLabel;
