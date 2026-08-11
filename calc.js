@@ -117,11 +117,51 @@ const ESTATE_GIFT_BRACKETS = [
 ];
 
 /* -------------------------------------------------------------------------
+   2026년 세제개편안 (2026.8.3 재정경제부 발표, 상세본 기준) — 연도별 시뮬레이션 설정
+   ※ 발표안은 아직 국회 심의·의결 전으로 확정 법률이 아님. 조문·세율·시행일은
+     국회 논의 과정에서 달라질 수 있음. 시행시기가 항목별로 2027/2028/2029로
+     다르므로 "적용 연도"를 선택하면 그 시점 규정을 반영해 계산합니다.
+   근거: 2026년 세제개편안 상세본, 소득세법 §95②③⑦~⑬, §103, §104①⑦,
+        종합부동산세법 §7①·§8①·§9①②⑤⑧⑨·§10·§13·§14①
+   ------------------------------------------------------------------------- */
+function getReformSettings(reformYear){
+  const y = reformYear || 2026; // 2026 = 현행법(개편 미적용)
+  return {
+    // 1세대1주택 특례 장기보유특별공제(개정 후 "장기거주 소득공제") — 보유/거주 tier
+    // 시행 '28.1.1. 이후 양도분 (소득법 §95②)
+    oneHouseHoldRate: y <= 2027 ? 0.04 : (y === 2028 ? 0.02 : 0),
+    oneHouseHoldMax:  y <= 2027 ? 0.40 : (y === 2028 ? 0.20 : 0),
+    oneHouseLiveRate: y <= 2027 ? 0.04 : (y === 2028 ? 0.06 : 0.08),
+    oneHouseLiveMax:  y <= 2027 ? 0.40 : (y === 2028 ? 0.60 : 0.80),
+    // 다주택자 주택(1세대1주택 특례 미해당) 장기보유특별공제 — 보유/거주 tier
+    // 시행 '28.1.1. 이후 양도분 (소득법 §95②)
+    multiHoldRate: y <= 2027 ? 0.02 : (y === 2028 ? 0.01 : 0),
+    multiHoldMax:  y <= 2027 ? 0.30 : (y === 2028 ? 0.15 : 0),
+    multiLiveRate: y <= 2027 ? 0 : 0.02,
+    multiLiveMax:  y <= 2027 ? 0 : 0.30,
+    // 다주택 조정대상지역 양도세 중과 가산율 한시 완화(2년 이상 보유 요건)
+    // 시행 '27.1.1. 이후 양도분, '27~'28년 한시조치 (소득법 §104⑦)
+    surcharge2: y === 2027 ? 0.05 : (y === 2028 ? 0.10 : 0.20),
+    surcharge3: y === 2027 ? 0.10 : (y === 2028 ? 0.15 : 0.30),
+    // 10년 이상 거주 1세대1주택(양도가액 30억원 이하) 양도소득 기본공제 확대(250만→2,500만)
+    // 시행 '27.1.1. 이후 양도분 (소득법 §103)
+    basicDeductionExpand: y >= 2027,
+    // 비사업용토지 장기보유특별공제 배제 + 중과세율 10%p→20%p
+    // 시행 '28.1.1. 이후 양도분 (소득법 §95④, §104①)
+    nonbizNewRule: y >= 2028,
+  };
+}
+
+/* -------------------------------------------------------------------------
    1) 양도소득세 — 자산유형별(주택/분양권/입주권) 세율 분기
+   p.reformYear: 2026(현행, 기본값) | 2027 | 2028 | 2029 — 2026 세제개편안 시뮬레이션
    ------------------------------------------------------------------------- */
 function calcTransferTax(p){
+  const settings = getReformSettings(p.reformYear);
   const gain = clamp0(p.transferPrice - p.acquisitionPrice - p.necessaryExpense);
-  const basicDeduction = 2500000; // 소득세법 §103, 인별 연 250만원
+  const isExpandedBasicDeduction = settings.basicDeductionExpand
+    && p.assetType === 'house' && p.isOneHouse && p.liveYears >= 10 && p.transferPrice <= 3000000000;
+  const basicDeduction = isExpandedBasicDeduction ? 25000000 : 2500000; // 소득세법 §103
   const gainAfterBasic = clamp0(gain - basicDeduction);
 
   // 분양권: 보유기간과 무관하게 60%/70% 단일세율, 장특공제 없음
@@ -137,7 +177,7 @@ function calcTransferTax(p){
         ['기본공제', wonMinus(basicDeduction)],
         ['과세표준', won(gainAfterBasic)],
         [`분양권 단일세율 (${(rate*100).toFixed(0)}%)`, won(capitalGainsTax)],
-        ['지방소득세 (10%)', won(localIncomeTax)],
+        ['지방소득세 (본세의 10%)', won(localIncomeTax)],
       ]
     };
   }
@@ -158,52 +198,85 @@ function calcTransferTax(p){
         ['기본공제', wonMinus(basicDeduction)],
         ['과세표준', won(gainAfterBasic)],
         [`단기보유세율 (${(rate*100).toFixed(0)}%)`, won(capitalGainsTax)],
-        ['지방소득세 (10%)', won(localIncomeTax)],
+        ['지방소득세 (본세의 10%)', won(localIncomeTax)],
       ]
     };
   }
 
-  // 2년 이상 보유: 장기보유특별공제 + 기본세율(비사업용토지는 +10%p)
-  let deductRate = 0;
-  if (p.assetType === 'house' && p.isOneHouse) {
-    const holdRate = Math.min(Math.floor(p.holdYears) * 0.04, 0.40);
-    const liveRate = Math.min(Math.floor(p.liveYears) * 0.04, 0.40);
-    deductRate = p.liveYears >= 2 ? (holdRate + liveRate) : 0;
-  } else {
-    deductRate = p.holdYears >= 3 ? Math.min(Math.floor(p.holdYears) * 0.02, 0.30) : 0;
-  }
-  const specialDeduction = gain * deductRate;
-  const taxBase = clamp0(gain - specialDeduction - basicDeduction);
+  // 2년 이상 보유: 조정대상지역 다주택 중과 대상이면 장기보유특별공제 자체가 배제됨(§95②),
+  // 그 외에는 기본세율 + 장기보유특별공제 (비사업용토지는 기본세율에 10%p 가산)
+  const isMultiHouseHeavy = p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !p.isOneHouse;
 
-  let capitalGainsTax;
-  if (p.assetType === 'nonbiz_land') {
-    // 비사업용토지: 기본세율 + 10%p 전 구간 가산 (소득세법 §104①8)
-    const nonbizBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.10}));
+  let deductRate = 0, specialDeduction = 0, taxBase, capitalGainsTax, effectiveRatePct;
+
+  if (isMultiHouseHeavy) {
+    // 다주택 중과: 장특공제 배제, 과세표준 = 양도차익 - 기본공제만
+    const addRate = p.houseCount === 2 ? settings.surcharge2 : settings.surcharge3;
+    const surchargeBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + addRate}));
+    taxBase = gainAfterBasic;
+    capitalGainsTax = progressiveTax(taxBase, surchargeBrackets);
+    const marginalBand = surchargeBrackets.find(b => taxBase <= b.limit);
+    effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
+  } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
+    // 2028년 이후: 비사업용토지 장특공제 완전 배제 + 중과세율 +20%p (개편안 §95④, §104①)
+    taxBase = gainAfterBasic;
+    const nonbizBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.20}));
     capitalGainsTax = progressiveTax(taxBase, nonbizBrackets);
+    const marginalBand = nonbizBrackets.find(b => taxBase <= b.limit);
+    effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
   } else {
-    const basic = progressiveTax(taxBase, INCOME_TAX_BRACKETS);
-    let surchargeTax = 0;
-    if (p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !p.isOneHouse) {
-      const addRate = p.houseCount === 2 ? 0.20 : 0.30;
-      const surchargeBrackets = INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + addRate}));
-      surchargeTax = progressiveTax(gainAfterBasic, surchargeBrackets);
+    if (p.assetType === 'house' && p.isOneHouse) {
+      const holdRate = Math.min(Math.floor(p.holdYears) * settings.oneHouseHoldRate, settings.oneHouseHoldMax);
+      const liveRate = Math.min(Math.floor(p.liveYears) * settings.oneHouseLiveRate, settings.oneHouseLiveMax);
+      deductRate = p.liveYears >= 2 ? (holdRate + liveRate) : 0;
+    } else if (p.assetType === 'house') {
+      // 다주택자 주택(1세대1주택 특례 미해당) — 보유/거주 tier 중 큰 쪽 (§95②, '28년 이후 거주요건 추가)
+      const holdRate = (p.holdYears >= 3) ? Math.min(Math.floor(p.holdYears) * settings.multiHoldRate, settings.multiHoldMax) : 0;
+      const liveRate = (p.liveYears >= 2) ? Math.min(Math.floor(p.holdYears) * settings.multiLiveRate, settings.multiLiveMax) : 0;
+      deductRate = Math.max(holdRate, liveRate);
+    } else {
+      // 조합원입주권·기타자산·비사업용토지(개편 미적용 연도): 일반 2%/년, 최대 30% — 이번 개편안에서 세율 변동 없음
+      deductRate = p.holdYears >= 3 ? Math.min(Math.floor(p.holdYears) * 0.02, 0.30) : 0;
     }
-    capitalGainsTax = Math.max(basic, surchargeTax);
+    specialDeduction = gain * deductRate;
+    taxBase = clamp0(gain - specialDeduction - basicDeduction);
+
+    const brackets = (p.assetType === 'nonbiz_land')
+      ? INCOME_TAX_BRACKETS.map(b => ({...b, rate: b.rate + 0.10})) // 비사업용토지 +10%p (§104①8, 개편 전)
+      : INCOME_TAX_BRACKETS;
+    capitalGainsTax = progressiveTax(taxBase, brackets);
+    const marginalBand = brackets.find(b => taxBase <= b.limit);
+    effectiveRatePct = marginalBand ? (marginalBand.rate * 100).toFixed(0) : '';
   }
+
   const localIncomeTax = capitalGainsTax * 0.1;
   const total = capitalGainsTax + localIncomeTax;
 
+  const rows = [
+    ['양도차익', won(gain)],
+  ];
+  if (isMultiHouseHeavy) {
+    rows.push(['장기보유특별공제', '배제 (다주택 중과 대상)']);
+  } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
+    rows.push(['장기보유특별공제', '배제 (2028년 개편안 — 비사업용토지)']);
+  } else {
+    rows.push([`장기보유특별공제 (${(deductRate*100).toFixed(0)}%)`, wonMinus(specialDeduction)]);
+  }
+  if (isExpandedBasicDeduction) {
+    rows.push(['기본공제 (10년+거주 1세대1주택 확대, 개편안)', wonMinus(basicDeduction)]);
+  } else {
+    rows.push(['기본공제', wonMinus(basicDeduction)]);
+  }
+  rows.push(
+    ['과세표준', won(taxBase)],
+    [`양도소득세 (한계세율 ${effectiveRatePct}%)`, won(capitalGainsTax)],
+    ['지방소득세 (본세의 10%)', won(localIncomeTax)],
+  );
+
   return {
     gain, deductRate, specialDeduction, basicDeduction, taxBase,
-    capitalGainsTax, localIncomeTax, total,
-    rows: [
-      ['양도차익', won(gain)],
-      [`장기보유특별공제 (${(deductRate*100).toFixed(0)}%)`, wonMinus(specialDeduction)],
-      ['기본공제', wonMinus(basicDeduction)],
-      ['과세표준', won(taxBase)],
-      ['양도소득세', won(capitalGainsTax)],
-      ['지방소득세 (10%)', won(localIncomeTax)],
-    ]
+    capitalGainsTax, localIncomeTax, total, isMultiHouseHeavy,
+    rows
   };
 }
 
@@ -279,11 +352,14 @@ function calcAcquisitionTax(p){
 
   const total = acquisitionTax + localEduTax + ruralTax - firstTimeDeduction;
 
+  const localEduPct = base > 0 ? (localEduTax / base * 100) : 0;
+  const ruralPct = base > 0 ? (ruralTax / base * 100) : 0;
+
   const rows = [
     ['취득세율', (rate*100).toFixed(2) + '%'],
     ['취득세', won(acquisitionTax)],
-    ['지방교육세', won(localEduTax)],
-    ['농어촌특별세', won(ruralTax)],
+    [`지방교육세 (취득가액의 ${localEduPct.toFixed(2)}%)`, won(localEduTax)],
+    [`농어촌특별세 (취득가액의 ${ruralPct.toFixed(2)}%)`, won(ruralTax)],
   ];
   if (firstTimeDeduction > 0) rows.push(['생애최초 구입 감면', wonMinus(firstTimeDeduction)]);
 
@@ -420,38 +496,117 @@ const COMP_TAX_OVER3 = [
   { limit: Infinity,    rate: 0.050,  deduction: 184300000 },
 ];
 
-function calcHoldingTax(p){
-  const fmvRatio = p.isOneHouse
-    ? (p.publicPrice <= 300000000 ? 0.43 : p.publicPrice <= 600000000 ? 0.44 : 0.45)
-    : 0.60;
-  const ptBase = p.publicPrice * fmvRatio;
-  const ptBrackets = p.isOneHouse ? PROPERTY_TAX_ONEHOUSE : PROPERTY_TAX_STANDARD;
-  const propertyTax = progressiveTax(ptBase, ptBrackets);
-  const localEduTaxPT = propertyTax * 0.2;
-  const urbanAreaTax = p.isUrbanArea ? ptBase * 0.0014 : 0;
-  const propertyTaxTotal = propertyTax + localEduTaxPT + urbanAreaTax;
+/* 2026년 세제개편안 — 종부세 세율표 (상세본 확인, §9①②)
+   '27년: 2주택이하/3주택이상 구분 유지, 6~12억 구간 세율 인상(1.0%→1.3%)
+   '28년 이후: 주택수 구분 폐지, 아래 OVER3와 동일한 단일세율표 적용 */
+const COMP_TAX_2027_UNDER2 = [
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 600000 },
+  { limit: 1200000000,  rate: 0.013,  deduction: 4200000 },
+  { limit: 2500000000,  rate: 0.015,  deduction: 6600000 },
+  { limit: 5000000000,  rate: 0.020,  deduction: 19100000 },
+  { limit: 9400000000,  rate: 0.027,  deduction: 54100000 },
+  { limit: Infinity,    rate: 0.035,  deduction: 129300000 },
+];
+const COMP_TAX_2027_OVER3 = [ // '28년 이후 단일세율표와 동일
+  { limit: 300000000,   rate: 0.005,  deduction: 0 },
+  { limit: 600000000,   rate: 0.007,  deduction: 600000 },
+  { limit: 1200000000,  rate: 0.013,  deduction: 4200000 },
+  { limit: 2500000000,  rate: 0.020,  deduction: 12600000 },
+  { limit: 5000000000,  rate: 0.030,  deduction: 37600000 },
+  { limit: 9400000000,  rate: 0.040,  deduction: 87600000 },
+  { limit: Infinity,    rate: 0.050,  deduction: 181600000 },
+];
 
-  const deduction = p.isOneHouse ? 1200000000 : 900000000;
-  const ctBase = clamp0(p.publicPrice - deduction) * 0.60;
-  const ctBrackets = p.houseCount >= 3 ? COMP_TAX_OVER3 : COMP_TAX_UNDER2;
-  const compTax = progressiveTax(ctBase, ctBrackets);
-  const ruralTaxCT = compTax * 0.2;
-  const compTaxTotal = compTax + ruralTaxCT;
+/* -------------------------------------------------------------------------
+   calcHoldingTaxDetailed — 세대 단위, 자산(주택/토지/건물)별·소유자별 보유세
+   - 1세대1주택 판정: 세대 전체 "주택" 자산이 정확히 1건일 때 자동 적용
+   - 재산세: 자산(물건) 전체 기준으로 세액 산출 후 지분율대로 소유자에게 안분 (실무 관행)
+   - 종부세: 주택 자산만 인별로 지분 합산해서 계산 (토지·건물의 종부세는 별도 확인 필요, 미반영)
+   ------------------------------------------------------------------------- */
+function calcHoldingTaxDetailed(state){
+  const assets = state.assets || [];
+  const houseAssets = assets.filter(a => a.type === 'house');
+  const isOneHouseHousehold = houseAssets.length === 1;
+  const houseCount = houseAssets.length;
 
-  const total = propertyTaxTotal + compTaxTotal;
+  const ownerTotals = {}; // key: 소유자명 -> { name, propertyTax, compTax, houseShareSum }
+  function getOwner(name){
+    if (!ownerTotals[name]) ownerTotals[name] = { name, propertyTax: 0, compTax: 0, houseShareSum: 0 };
+    return ownerTotals[name];
+  }
+
+  const assetRows = [];
+  let grandPropertyTax = 0;
+
+  assets.forEach(asset => {
+    const owners = (asset.owners || []).filter(o => o.name && o.sharePct > 0);
+    const shareTotal = owners.reduce((s,o)=>s+o.sharePct,0) || 100;
+
+    let wholeBase, wholeBrackets, wholeTaxLabel;
+    if (asset.type === 'house') {
+      const fmvRatio = isOneHouseHousehold
+        ? (asset.publicPrice <= 300000000 ? 0.43 : asset.publicPrice <= 600000000 ? 0.44 : 0.45)
+        : 0.60;
+      wholeBase = asset.publicPrice * fmvRatio;
+      wholeBrackets = isOneHouseHousehold ? PROPERTY_TAX_ONEHOUSE : PROPERTY_TAX_STANDARD;
+    } else {
+      // 토지·건물: 공정시장가액비율 70% (지방세법 시행령 §109), 세율은 간이 근사치(0.3%) — 종합/별도합산·분리과세 구분 미반영
+      wholeBase = asset.publicPrice * 0.70;
+      wholeBrackets = [{ limit: Infinity, rate: 0.003, deduction: 0 }];
+    }
+    const wholePropertyTaxRaw = progressiveTax(wholeBase, wholeBrackets);
+    const wholeLocalEdu = wholePropertyTaxRaw * 0.2;
+    const wholeUrban = state.isUrbanArea ? wholeBase * 0.0014 : 0;
+    const wholePropertyTotal = wholePropertyTaxRaw + wholeLocalEdu + wholeUrban;
+    grandPropertyTax += wholePropertyTotal;
+
+    const ownerShares = owners.map(o => {
+      const pct = o.sharePct / shareTotal * 100;
+      const amount = wholePropertyTotal * (pct / 100);
+      const owner = getOwner(o.name);
+      owner.propertyTax += amount;
+      if (asset.type === 'house') owner.houseShareSum += asset.publicPrice * (pct / 100);
+      return { name: o.name, relation: o.relation, pct, amount };
+    });
+
+    assetRows.push({
+      type: asset.type, desc: asset.desc, publicPrice: asset.publicPrice,
+      propertyTaxTotal: wholePropertyTotal, ownerShares,
+    });
+  });
+
+  // 종부세: 주택만, 인별 지분 합산
+  // 2026년 세제개편안(발표안, 미확정) 반영: 기본공제·공정시장가액비율·세율표가 '27년, '28년부터 각각 달라짐
+  const reformYear = state.reformYear || 2026;
+  const deduction = isOneHouseHousehold
+    ? (reformYear >= 2027 ? (state.isResident ? 1400000000 : 900000000) : 1200000000)
+    : 900000000; // '기타' 공제 확대식(4억+5억×비중)은 세부 산정요건 복잡해 미반영, 현행 9억으로 근사
+  const ctFmvRatio = reformYear < 2027
+    ? 0.60
+    : (houseCount >= 3 ? (reformYear === 2027 ? 0.70 : 0.80) : 0.70); // 3주택+조정지역자 80%(28년~)는 조정지역 여부 미반영, 3주택 이상이면 적용으로 근사
+  const ctBrackets = reformYear < 2027
+    ? (houseCount >= 3 ? COMP_TAX_OVER3 : COMP_TAX_UNDER2)
+    : (reformYear === 2027 ? (houseCount >= 3 ? COMP_TAX_2027_OVER3 : COMP_TAX_2027_UNDER2) : COMP_TAX_2027_OVER3);
+
+  let grandCompTax = 0;
+  Object.values(ownerTotals).forEach(owner => {
+    if (owner.houseShareSum <= 0) return;
+    const ctBase = clamp0(owner.houseShareSum - deduction) * ctFmvRatio;
+    const compTaxRaw = progressiveTax(ctBase, ctBrackets);
+    const ruralTax = compTaxRaw * 0.2;
+    owner.compTax = compTaxRaw + ruralTax;
+    grandCompTax += owner.compTax;
+  });
+
+  const grandTotal = grandPropertyTax + grandCompTax;
+  const ownerList = Object.values(ownerTotals).map(o => ({
+    ...o, total: o.propertyTax + o.compTax
+  }));
 
   return {
-    fmvRatio, ptBase, propertyTax, localEduTaxPT, urbanAreaTax, propertyTaxTotal,
-    deduction, ctBase, compTax, ruralTaxCT, compTaxTotal, total,
-    rows: [
-      ['[재산세] 과세표준', won(ptBase)],
-      ['[재산세] 산출세액', won(propertyTax)],
-      ['[재산세] 지방교육세 (20%)', won(localEduTaxPT)],
-      ['[재산세] 도시지역분', won(urbanAreaTax)],
-      ['[종부세] 공제 후 과세표준', won(ctBase)],
-      ['[종부세] 산출세액', won(compTax)],
-      ['[종부세] 농어촌특별세 (20%)', won(ruralTaxCT)],
-    ]
+    isOneHouseHousehold, houseCount, deduction, reformYear, assetRows, ownerList,
+    grandPropertyTax, grandCompTax, grandTotal,
   };
 }
 

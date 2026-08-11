@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>보유세 계산기 2026 (재산세·종합부동산세) | 전주 세무회계 아진</title>
-<meta name="description" content="공시가격과 보유주택 수를 입력하면 재산세(지방세법 §111)와 종합부동산세(종부세법 §8·9)를 함께 계산합니다.">
+<title>보유세 계산기 2026 (재산세·종합부동산세) | 세무회계 아진</title>
+<meta name="description" content="세대 단위로 주택·토지·건물 자산과 소유자별 지분을 입력하면 재산세와 종합부동산세를 소유자별로 계산합니다.">
 <link rel="canonical" href="https://taxajin.com/holding-tax.html">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" type="image/png" href="img/icon-square.png">
@@ -33,50 +33,56 @@
   <section class="hero">
     <span class="eyebrow">재산세·종합부동산세</span>
     <h1>보유세 <em>계산기</em></h1>
-    <p>매년 6월 1일 기준 주택 소유자에게 부과되는 재산세와 종합부동산세를 공시가격 기준으로 함께 계산합니다.</p>
+    <p>세대가 보유한 주택·토지·건물을 자산별로 등록하고 각 자산의 소유자와 지분을 입력하면, 재산세와 종합부동산세를 소유자별로 나눠서 계산합니다.</p>
   </section>
 
   <form class="calc-panel" id="form-holding">
-    <div class="field-grid">
+    <div class="field-grid" style="margin-bottom:18px;">
       <div class="field">
-        <label>주택 공시가격 (합산, 원)</label>
-        <input type="text" inputmode="numeric" id="h-publicPrice" placeholder="예: 1,500,000,000" required>
-        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a></span>
-      </div>
-      <div class="field">
-        <label>보유주택 수 (세대 기준)</label>
-        <input type="number" id="h-houseCount" value="1" min="1">
-      </div>
-      <div class="field">
-        <label>1세대 1주택자인가요?</label>
-        <div class="radio-row">
-          <label><input type="radio" name="isOneHouse" value="1" checked><span>예</span></label>
-          <label><input type="radio" name="isOneHouse" value="0"><span>아니오</span></label>
-        </div>
-      </div>
-      <div class="field">
-        <label>도시지역(도시계획구역) 내 주택인가요?</label>
+        <label>도시지역(도시계획구역) 내 자산인가요?</label>
         <div class="radio-row">
           <label><input type="radio" name="isUrbanArea" value="1" checked><span>예</span></label>
           <label><input type="radio" name="isUrbanArea" value="0"><span>아니오</span></label>
         </div>
       </div>
+      <div class="field">
+        <label>(1세대1주택인 경우) 그 주택에 실제 거주 중인가요?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="isResident" value="1" checked><span>예</span></label>
+          <label><input type="radio" name="isResident" value="0"><span>아니오</span></label>
+        </div>
+        <span class="hint">2027년 개편안부터 1세대1주택자 종부세 기본공제가 거주 14억/비거주 9억으로 나뉩니다</span>
+      </div>
+      <div class="field full" style="background:var(--panel); padding:14px; border-radius:3px;">
+        <label style="font-weight:700; color:var(--brand-deep);">2026년 세제개편안 선반영 (시뮬레이션)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="reformYear" value="2026" checked><span>현행법 (2026)</span></label>
+          <label><input type="radio" name="reformYear" value="2027"><span>2027년 개편안</span></label>
+          <label><input type="radio" name="reformYear" value="2028"><span>2028년 이후 개편안</span></label>
+        </div>
+        <span class="hint">2026.8.3 발표된 정부 세제개편안 상세본 기준 시뮬레이션입니다. 아직 국회 심의·의결 전으로 확정된 법률이 아니며, 재산세는 이번 개편안 대상이 아니라 변동 없습니다(종부세만 반영). '기타(다주택)' 기본공제 확대식과 3주택+조정지역 공정시장가액비율 80%는 세부 요건이 복잡해 근사치로 처리했습니다.</span>
+      </div>
     </div>
+
+    <div id="asset-list"></div>
+    <button type="button" class="calc-btn" id="add-asset-btn" style="background:var(--panel-deep); color:var(--brand-deep); margin-bottom:20px;">+ 자산 추가</button>
+
     <button type="submit" class="calc-btn">보유세 계산하기</button>
   </form>
 
   <div class="result" id="result-holding">
     <div class="stamp">계산<br>완료</div>
-    <h3>예상 연간 보유세</h3>
+    <h3>예상 연간 보유세 (세대 합계)</h3>
     <div class="headline" id="h-total">0원</div>
-    <div class="breakdown" id="h-breakdown"></div>
-    <p class="compare-note">※ 2026.8.3 발표된 세제개편안은 1세대1주택 종부세 공제를 거주 14억/비거주 9억으로 조정하는 등 개편을 예고했지만, 이 글 작성 시점 기준 국회 통과 전이라 이 계산기는 현행법(1주택 12억·기타 9억 공제) 기준입니다.</p>
+    <div id="h-asset-breakdown"></div>
+    <div id="h-owner-breakdown" style="margin-top:16px;"></div>
+    <p class="compare-note" id="h-onehouse-note"></p>
     <p class="cite">근거: 지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
-    <p class="disclaimer">※ 간이 계산 결과입니다. 세부담 상한(전년대비 105~130%), 1세대1주택 세액공제(고령자·장기보유), 공동명의 특례는 반영되어 있지 않습니다.</p>
+    <p class="disclaimer">※ 간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
   </div>
 
   <div class="cta">
-    <p>다주택 보유세 부담을 줄이는 방법이 궁금하다면 <b>세무사 상담</b>으로 확인해보세요.</p>
+    <p>지분 구성이나 다주택 보유세 절세 방법이 궁금하다면 <b>세무사 상담</b>으로 확인해보세요.</p>
     <a class="cta-btn" id="h-cta-open" href="#">상담 신청</a>
     <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
@@ -89,8 +95,8 @@
 
   <section class="info-section">
     <h2>보유세, 이렇게 계산됩니다</h2>
-    <p>재산세는 공시가격에 공정시장가액비율(1세대1주택 43~45%, 다주택·법인 60%)을 곱한 과세표준에 0.1~0.4% 누진세율(1주택 특례 0.05~0.35%, <span class="law-ref">지방세법 §111</span>)을 적용하고, 지방교육세(재산세액의 20%)와 도시지역분(과세표준의 0.14%)이 추가됩니다.</p>
-    <p>종합부동산세는 공시가격 합계에서 기본공제(1세대1주택 12억원, 그 외 9억원, <span class="law-ref">종부세법 §8</span>)를 뺀 금액에 공정시장가액비율 60%를 곱한 과세표준에 0.5~2.7%(2주택 이하) 또는 0.5~5.0%(3주택 이상) 세율을 적용하며, 농어촌특별세가 종부세액의 20% 추가됩니다.</p>
+    <p>재산세는 물건(자산) 단위로 과세됩니다. 세대 전체가 보유한 주택이 1건뿐이면 1세대1주택 특례세율(0.05~0.35%)이 적용되고, 2건 이상이면 표준세율(0.1~0.4%)이 적용됩니다(<span class="law-ref">지방세법 §111</span>). 공동명의인 경우 물건 전체 기준으로 세액을 산출한 뒤 지분율대로 나눠 각자에게 고지됩니다.</p>
+    <p>종합부동산세는 오직 주택에만 적용되며, 각 소유자가 보유한 모든 주택의 지분을 인별로 합산해 기본공제(1세대1주택 12억원, 그 외 9억원)를 뺀 뒤 세율을 적용합니다(<span class="law-ref">종부세법 §8·§9</span>).</p>
   </section>
 
   <div class="related">
@@ -112,22 +118,158 @@
 
 <script src="calc.js"></script>
 <script>
-attachThousandsAll('#h-publicPrice');
+const assetListEl = document.getElementById('asset-list');
+let assetSeq = 0;
+
+function ownerRowHtml(assetId, ownerIdx, defaultName, defaultRelation, defaultPct){
+  return `
+    <div class="owner-row" data-owner-idx="${ownerIdx}" style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+      <input type="text" class="owner-name" placeholder="성명" value="${defaultName||''}" style="flex:1.2; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
+      <select class="owner-relation" style="flex:1; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
+        <option value="본인" ${defaultRelation==='본인'?'selected':''}>본인</option>
+        <option value="배우자(남편)" ${defaultRelation==='배우자(남편)'?'selected':''}>배우자(남편)</option>
+        <option value="배우자(아내)" ${defaultRelation==='배우자(아내)'?'selected':''}>배우자(아내)</option>
+        <option value="자녀" ${defaultRelation==='자녀'?'selected':''}>자녀</option>
+        <option value="부모" ${defaultRelation==='부모'?'selected':''}>부모</option>
+        <option value="기타" ${defaultRelation==='기타'?'selected':''}>기타</option>
+      </select>
+      <input type="number" class="owner-pct" placeholder="지분%" value="${defaultPct!=null?defaultPct:100}" min="0" max="100" style="width:70px; padding:9px 10px; border-radius:3px; border:1px solid var(--border-strong); background:var(--sky-bg); font-size:13.5px;">
+      <span style="font-size:13px; color:var(--muted);">%</span>
+      <button type="button" class="owner-remove-btn" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0 4px;" title="소유자 삭제">&times;</button>
+    </div>`;
+}
+
+function assetRowHtml(assetId){
+  return `
+  <div class="calc-panel asset-row" data-asset-id="${assetId}" style="margin:0 0 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <span style="font-weight:700; color:var(--brand-deep); font-size:14px;">자산 ${assetId}</span>
+      <button type="button" class="asset-remove-btn" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px;">삭제</button>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label>물건 종류</label>
+        <select class="asset-type">
+          <option value="house">주택</option>
+          <option value="land">토지</option>
+          <option value="building">건물</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>내용 (예: OO아파트 OO동 OO호)</label>
+        <input type="text" class="asset-desc" placeholder="예: 행복아파트 101동 1001호">
+      </div>
+      <div class="field full">
+        <label>기준시가(공시가격, 원)</label>
+        <input type="text" inputmode="numeric" class="asset-price" placeholder="예: 1,200,000,000">
+        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a></span>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <label style="font-size:13px; color:var(--muted);">소유자 (지분 구성)</label>
+      <div class="owner-list"></div>
+      <button type="button" class="add-owner-btn" style="margin-top:8px; background:none; border:1px dashed var(--border-strong); color:var(--brand); padding:7px 12px; border-radius:20px; font-size:12.5px; cursor:pointer;">+ 소유자 추가</button>
+    </div>
+  </div>`;
+}
+
+function addAsset(){
+  assetSeq++;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = assetRowHtml(assetSeq);
+  const assetEl = wrap.firstElementChild;
+  assetListEl.appendChild(assetEl);
+  addOwner(assetEl, '', '본인', 100);
+
+  assetEl.querySelector('.asset-remove-btn').addEventListener('click', () => assetEl.remove());
+  assetEl.querySelector('.add-owner-btn').addEventListener('click', () => addOwner(assetEl));
+}
+
+function addOwner(assetEl, name, relation, pct){
+  const ownerListEl = assetEl.querySelector('.owner-list');
+  const idx = ownerListEl.children.length;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = ownerRowHtml(assetEl.dataset.assetId, idx, name, relation, pct);
+  const ownerEl = wrap.firstElementChild;
+  ownerListEl.appendChild(ownerEl);
+  ownerEl.querySelector('.owner-remove-btn').addEventListener('click', () => {
+    if (ownerListEl.children.length > 1) ownerEl.remove();
+  });
+}
+
+document.getElementById('add-asset-btn').addEventListener('click', () => addAsset());
+addAsset(); // 최초 1개 자산 기본 표시
+
 document.getElementById('form-holding').addEventListener('submit', function(e){
   e.preventDefault();
-  const p = {
-    publicPrice: rawNumber(document.getElementById('h-publicPrice')),
-    houseCount: Number(document.getElementById('h-houseCount').value || 1),
-    isOneHouse: document.querySelector('input[name=isOneHouse]:checked').value === '1',
-    isUrbanArea: document.querySelector('input[name=isUrbanArea]:checked').value === '1',
-  };
-  const r = calcHoldingTax(p);
-  document.getElementById('h-total').textContent = won(r.total);
-  document.getElementById('h-breakdown').innerHTML = r.rows.map(([k,v]) =>
-    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
-  ).join('') + `<div class="row total"><span class="k">합계 (재산세+종부세)</span><span class="v">${won(r.total)}</span></div>`;
+  const isUrbanArea = document.querySelector('input[name=isUrbanArea]:checked').value === '1';
+  const isResident = document.querySelector('input[name=isResident]:checked').value === '1';
+  const reformYear = Number(document.querySelector('input[name=reformYear]:checked').value);
+
+  const assets = Array.from(document.querySelectorAll('.asset-row')).map(assetEl => {
+    const priceInput = assetEl.querySelector('.asset-price');
+    const owners = Array.from(assetEl.querySelectorAll('.owner-row')).map(ownerEl => ({
+      name: ownerEl.querySelector('.owner-name').value.trim(),
+      relation: ownerEl.querySelector('.owner-relation').value,
+      sharePct: Number(ownerEl.querySelector('.owner-pct').value || 0),
+    }));
+    return {
+      type: assetEl.querySelector('.asset-type').value,
+      desc: assetEl.querySelector('.asset-desc').value.trim(),
+      publicPrice: rawNumber(priceInput),
+      owners,
+    };
+  }).filter(a => a.publicPrice > 0);
+
+  if (assets.length === 0) {
+    alert('자산을 1건 이상 입력해주세요.');
+    return;
+  }
+
+  const r = calcHoldingTaxDetailed({ isUrbanArea, assets, isResident, reformYear });
+
+  document.getElementById('h-total').textContent = won(r.grandTotal);
+
+  document.getElementById('h-asset-breakdown').innerHTML = r.assetRows.map(a => {
+    const typeLabel = a.type === 'house' ? '주택' : (a.type === 'land' ? '토지' : '건물');
+    const ownerLines = a.ownerShares.map(o =>
+      `<div class="row"><span class="k">　└ ${o.name}(${o.relation}) ${o.pct.toFixed(0)}%</span><span class="v">${won(o.amount)}</span></div>`
+    ).join('');
+    return `<div class="breakdown" style="margin-top:10px;">
+      <div class="row total" style="border-top:none;"><span class="k">[${typeLabel}] ${a.desc || '(내용 미입력)'}</span><span class="v">${won(a.propertyTaxTotal)}</span></div>
+      ${ownerLines}
+    </div>`;
+  }).join('');
+
+  document.getElementById('h-owner-breakdown').innerHTML =
+    '<h3 style="margin-top:6px;">소유자별 합계</h3>' +
+    r.ownerList.map(o => `
+      <div class="breakdown" style="margin-top:6px;">
+        <div class="row"><span class="k">${o.name} — 재산세</span><span class="v">${won(o.propertyTax)}</span></div>
+        <div class="row"><span class="k">${o.name} — 종합부동산세</span><span class="v">${won(o.compTax)}</span></div>
+        <div class="row total"><span class="k">${o.name} 합계</span><span class="v">${won(o.total)}</span></div>
+      </div>`
+    ).join('');
+
+  document.getElementById('h-onehouse-note').textContent = r.isOneHouseHousehold
+    ? `1세대1주택 특례 적용 대상입니다 (세대 전체 보유주택 ${r.houseCount}건, 종부세 기본공제 ${won(r.deduction)} 적용)`
+    : `세대 전체 보유주택이 ${r.houseCount}건이라 1세대1주택 특례가 적용되지 않습니다 (종부세 기본공제 ${won(r.deduction)} 적용)`;
+  document.getElementById('h-onehouse-note').textContent += r.reformYear === 2026
+    ? ' — 현행법(2026) 기준입니다.'
+    : ` — 2026년 세제개편안(발표안) 기준 ${r.reformYear}년 규정을 시뮬레이션한 결과입니다. 아직 국회 통과 전이라 실제와 다를 수 있습니다.`;
+
   document.getElementById('result-holding').classList.add('show');
   document.getElementById('result-holding').scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+// 자산가격 입력창에 콤마 포맷을 동적으로도 적용
+assetListEl.addEventListener('input', function(e){
+  if (e.target.classList.contains('asset-price')) attachThousands(e.target);
+});
+
+document.getElementById('h-cta-open').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('h-lead-form').classList.add('show');
 });
 initLeadCapture('h', '보유세');
 </script>

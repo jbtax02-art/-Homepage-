@@ -60,7 +60,7 @@ header.site{
   padding:14px 24px; max-width:920px; margin:0 auto;
 }
 .brand{display:flex; align-items:center; gap:10px; text-decoration:none;}
-.logo-img{height:34px; width:auto; display:block;}
+.logo-img{height:44px; width:auto; display:block;}
 
 nav.tabs{display:flex; gap:2px;}
 nav.tabs a{
@@ -80,10 +80,10 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
 /* ---------- 히어로 ---------- */
 .hero{padding:52px 0 28px;}
 .eyebrow{
-  display:inline-flex; align-items:center; gap:8px;
-  font-size:12px; color:var(--brand); letter-spacing:.08em; margin-bottom:14px; font-weight:600;
+  display:inline-flex; align-items:center;
+  font-family:'Noto Serif KR',serif; font-weight:700;
+  font-size:20px; color:var(--brand-deep); letter-spacing:-0.01em; margin-bottom:14px;
 }
-.eyebrow::before{content:''; width:16px; height:1px; background:var(--brand);}
 .hero h1{font-size:clamp(26px,4.4vw,38px); line-height:1.35; color:var(--brand-deep);}
 .hero h1 em{color:var(--brand); font-style:normal;}
 .hero p{margin-top:14px; color:var(--muted); font-size:15px; line-height:1.7; max-width:60ch;}
