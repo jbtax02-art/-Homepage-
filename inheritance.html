@@ -100,17 +100,22 @@
   </form>
 
   <div class="result" id="result-inherit">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 상속세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
     <div class="stamp">계산<br>완료</div>
     <h3>예상 납부세액</h3>
     <div class="headline" id="i-total">0원</div>
     <div class="breakdown" id="i-breakdown"></div>
     <p class="cite">근거: 상증세법 §19(배우자상속공제), §21(일괄공제), §26(세율), §69(신고세액공제)</p>
     <p class="disclaimer">※ 간이 계산 결과입니다. 인적공제·금융재산공제·동거주택상속공제(최대 6억)·가업상속공제 등은 반영되어 있지 않으며, 이런 공제가 있는 경우 실제 세액은 더 낮아질 수 있습니다.</p>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
 
   <div class="cta">
     <p>배우자공제·동거주택공제 등 추가 공제 가능 여부는 <b>세무사 상담</b>으로 꼼꼼히 확인하세요.</p>
-    <a class="cta-btn" href="https://naver.me/FFqdGqaX" target="_blank" rel="noopener">상담 신청</a>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('상속세', buildSummaryFromBreakdown('i')); event.preventDefault();">상담 신청</a>
     <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
 
@@ -136,6 +141,7 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="calc.js"></script>
 <script>
 attachThousandsAll('#i-totalEstate, #i-spouseShare, #i-priorGift, #i-publicDues, #i-funeralCost, #i-debt, #i-financialAsset, #i-giftTaxCredit');

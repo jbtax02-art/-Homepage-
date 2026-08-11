@@ -74,17 +74,22 @@
   </form>
 
   <div class="result" id="result-gift">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 증여세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
     <div class="stamp">계산<br>완료</div>
     <h3>예상 납부세액</h3>
     <div class="headline" id="g-total">0원</div>
     <div class="breakdown" id="g-breakdown"></div>
     <p class="cite">근거: 상증세법 §53(증여재산공제), §56(세율, §26 준용), §69(신고세액공제)</p>
     <p class="disclaimer">※ 간이 계산 결과입니다. 혼인·출산 증여재산공제(§53의2, 최대 1억) 등 별도 특례는 반영되어 있지 않습니다.</p>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
 
   <div class="cta">
     <p>혼인·출산 공제나 부동산 시가 평가가 애매하다면 <b>세무사 상담</b>으로 정확히 확인하세요.</p>
-    <a class="cta-btn" href="https://naver.me/FFqdGqaX" target="_blank" rel="noopener">상담 신청</a>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('증여세', buildSummaryFromBreakdown('g')); event.preventDefault();">상담 신청</a>
     <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
 
@@ -110,6 +115,7 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="calc.js"></script>
 <script>
 attachThousandsAll('#g-giftValue, #g-priorUsed, #g-debt');

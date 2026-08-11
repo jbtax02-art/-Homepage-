@@ -70,6 +70,10 @@
   </form>
 
   <div class="result" id="result-holding">
+    <div class="print-header">
+      <div class="firm">세무회계 아진 (阿進) — 보유세 계산 결과</div>
+      <div class="meta">전주시 덕진구 가인로 18 법조정문빌딩 103호 · 대표 김종빈 세무사<br>발급일시: <span class="print-date"></span></div>
+    </div>
     <div class="stamp">계산<br>완료</div>
     <h3>예상 연간 보유세 (세대 합계)</h3>
     <div class="headline" id="h-total">0원</div>
@@ -79,11 +83,12 @@
     <div id="h-reform-compare"></div>
     <p class="cite">근거: 지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
     <p class="disclaimer">※ 간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
+    <button type="button" class="print-btn" onclick="preparePrintDate(); window.print();">🖨 결과 PDF로 저장 / 인쇄</button>
   </div>
 
   <div class="cta">
     <p>지분 구성이나 다주택 보유세 절세 방법이 궁금하다면 <b>세무사 상담</b>으로 확인해보세요.</p>
-    <a class="cta-btn" href="https://naver.me/FFqdGqaX" target="_blank" rel="noopener">상담 신청</a>
+    <a class="cta-btn" href="#" onclick="submitLeadDirect('보유세', buildHoldingSummary()); event.preventDefault();">상담 신청</a>
     <a class="cta-btn outline" href="tel:0000000000">바로 전화하기</a>
   </div>
 
@@ -110,6 +115,7 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="calc.js"></script>
 <script>
 const assetListEl = document.getElementById('asset-list');
@@ -156,7 +162,7 @@ function assetRowHtml(assetId){
       <div class="field full">
         <label>기준시가(공시가격, 원)</label>
         <input type="text" inputmode="numeric" class="asset-price" placeholder="예: 1,200,000,000">
-        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a></span>
+        <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
       </div>
     </div>
     <div style="margin-top:14px;">

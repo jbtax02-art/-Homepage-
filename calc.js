@@ -26,6 +26,89 @@ const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
 const wonMinus = n => Math.round(n) === 0 ? won(0) : ('-' + won(n));
 const clamp0 = n => Math.max(0, n);
 
+/* ---------- 상담 신청: 클릭 한 번으로 계산 결과 + 전화번호를 이메일로 바로 전송 (EmailJS) ----------
+   JB: emailjs.com에서 발급받은 3개 값을 아래에 붙여넣으세요.
+   (Service ID, Template ID, Public Key — 설정 방법은 안내한 단계 참고)          */
+const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY';
+
+if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+}
+
+function submitLeadDirect(calculatorName, summaryLines){
+  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+    alert('아직 상담 접수 연결이 완료되지 않았습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  const phone = prompt('상담 연락받으실 전화번호를 입력해주세요.\n(입력 후 확인을 누르면 계산 결과와 함께 바로 접수됩니다)');
+  if (!phone || !phone.trim()) return; // 취소하거나 빈 값이면 전송하지 않음
+
+  const payload = {
+    calculator: calculatorName,
+    phone: phone.trim(),
+    summary: summaryLines.join(' / '),
+    url: location.href,
+  };
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, payload).then(() => {
+    showCopyToast('상담 신청이 접수되었습니다. 확인 후 순차적으로 연락드립니다.');
+  }).catch(() => {
+    showCopyToast('전송 중 문제가 발생했습니다. 전화로 문의해주세요.');
+  });
+}
+
+function buildSummaryFromBreakdown(prefix){
+  const breakdownEl = document.getElementById(prefix + '-breakdown');
+  const totalEl = document.getElementById(prefix + '-total');
+  const lines = [];
+  if (breakdownEl) {
+    breakdownEl.querySelectorAll('.row').forEach(row => {
+      const k = row.querySelector('.k');
+      const v = row.querySelector('.v');
+      if (k && v) lines.push(`${k.textContent.trim()}: ${v.textContent.trim()}`);
+    });
+  }
+  if (totalEl) lines.push(`합계: ${totalEl.textContent.trim()}`);
+  return lines;
+}
+
+function buildHoldingSummary(){
+  const totalEl = document.getElementById('h-total');
+  const ownerEl = document.getElementById('h-owner-breakdown');
+  const lines = [];
+  if (ownerEl) {
+    ownerEl.querySelectorAll('.row').forEach(row => {
+      const k = row.querySelector('.k');
+      const v = row.querySelector('.v');
+      if (k && v) lines.push(`${k.textContent.trim()}: ${v.textContent.trim()}`);
+    });
+  }
+  if (totalEl) lines.push(`세대 합계: ${totalEl.textContent.trim()}`);
+  return lines;
+}
+
+/* ---------- 인쇄(PDF 저장) 직전 발급일시 채워넣기 ---------- */
+function preparePrintDate(){
+  const now = new Date().toLocaleString('ko-KR', { dateStyle: 'long', timeStyle: 'short' });
+  document.querySelectorAll('.print-date').forEach(el => { el.textContent = now; });
+}
+
+function showCopyToast(message){
+  let toast = document.getElementById('copyToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'copyToast';
+    toast.style.cssText = 'position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:300; background:#0F4C77; color:#fff; padding:12px 18px; border-radius:6px; font-size:13.5px; max-width:90vw; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,.25);';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.style.display = 'block';
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => { toast.style.display = 'none'; }, 4500);
+}
+
 /* ---------- 금액 입력창 천단위 콤마 자동 포맷 ---------- */
 function attachThousands(el){
   if (!el) return;
