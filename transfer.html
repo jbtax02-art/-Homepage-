@@ -65,18 +65,19 @@
       </div>
       <div class="field">
         <label>취득일자</label>
-        <input type="date" id="t-acquisitionDate" required>
+        <input type="date" id="t-acquisitionDate" min="1980-01-01" max="2035-12-31" required>
+        <span class="hint">직접 입력하면 오작동할 수 있어요, 달력 아이콘을 눌러서 선택해주세요</span>
       </div>
       <div class="field">
         <label>양도일자 (또는 양도 예정일)</label>
-        <input type="date" id="t-transferDate" required>
+        <input type="date" id="t-transferDate" min="1980-01-01" max="2035-12-31" required>
         <span class="hint" id="t-holdYearsPreview"></span>
       </div>
 
       <div id="t-houseOnlyFields" class="field-grid" style="grid-column:1/-1; display:contents;">
         <div class="field">
           <label>거주시작일자 (1세대1주택인 경우, 거주한 적 없으면 비워두세요)</label>
-          <input type="date" id="t-liveStartDate">
+          <input type="date" id="t-liveStartDate" min="1980-01-01" max="2035-12-31">
           <span class="hint" id="t-liveYearsPreview">양도일자까지 계속 거주하는 것으로 계산합니다. 2년 이상 거주해야 1세대1주택 장특공제 특례 적용</span>
         </div>
         <div class="field">
@@ -96,12 +97,14 @@
           <span class="hint" id="t-onehouse-warning" style="display:none; color:#A23B2E; font-weight:700;">⚠ 실거래가가 12억원을 넘습니다. "아니오"로 두면 1세대1주택 비과세·고가주택 안분과세 혜택이 전혀 적용되지 않고 전액 과세됩니다. 실제 1주택자라면 반드시 "예"를 선택하세요.</span>
         </div>
         <div class="field full">
-          <label>양도 주택이 조정대상지역 내에 있나요?</label>
+          <label>조정대상지역 이력</label>
           <div class="radio-row">
-            <label><input type="radio" name="isAdjustedArea" value="1"><span>예</span></label>
-            <label><input type="radio" name="isAdjustedArea" value="0" checked><span>아니오</span></label>
+            <label><input type="radio" name="adjustedAreaHistory" value="none" checked><span>해당없음 (비조정지역)</span></label>
+            <label><input type="radio" name="adjustedAreaHistory" value="both"><span>취득·양도 모두 조정지역</span></label>
+            <label><input type="radio" name="adjustedAreaHistory" value="acq_only"><span>취득 당시만 조정지역 (현재 해제)</span></label>
+            <label><input type="radio" name="adjustedAreaHistory" value="now_only"><span>양도 당시만 조정지역 (취득 후 신규지정)</span></label>
           </div>
-          <span class="hint">2026.5.10부터 조정대상지역 다주택자 중과 유예 종료 (2주택 +20%p, 3주택↑ +30%p)</span>
+          <span class="hint">1세대1주택 2년 거주요건은 "취득 당시" 조정지역 여부로, 다주택 중과(2026.5.10부터 유예 종료, 2주택 +20%p·3주택↑ +30%p)는 "양도 당시" 조정지역 여부로 각각 판단합니다(<span class="law-ref">소득세법 시행령 §154①, §104⑦</span>).</span>
         </div>
       </div>
     </div>
@@ -224,6 +227,9 @@ document.getElementById('form-transfer').addEventListener('submit', function(e){
   const acqDate = document.getElementById('t-acquisitionDate').value;
   const trDate = document.getElementById('t-transferDate').value;
   const liveStart = document.getElementById('t-liveStartDate').value;
+  const adjHistory = document.querySelector('input[name=adjustedAreaHistory]:checked').value;
+  const isAdjustedAreaAtAcquisition = adjHistory === 'both' || adjHistory === 'acq_only';
+  const isAdjustedAreaNow = adjHistory === 'both' || adjHistory === 'now_only';
   const p = {
     assetType,
     transferPrice: rawNumber(document.getElementById('t-transferPrice')),
@@ -233,7 +239,8 @@ document.getElementById('form-transfer').addEventListener('submit', function(e){
     liveYears: liveStart ? yearsBetween(liveStart, trDate) : 0,
     houseCount: Number(document.querySelector('input[name="t-houseCount"]:checked').value),
     isOneHouse: document.querySelector('input[name=isOneHouse]:checked').value === '1',
-    isAdjustedArea: document.querySelector('input[name=isAdjustedArea]:checked').value === '1',
+    isAdjustedAreaAtAcquisition,
+    isAdjustedAreaNow,
     reformYear: 2026,
   };
   const r = calcTransferTax(p);

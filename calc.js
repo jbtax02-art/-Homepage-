@@ -249,13 +249,16 @@ function calcTransferTax(p){
 
   // 2년 이상 보유: 조정대상지역 다주택 중과 대상이면 장기보유특별공제 자체가 배제됨(§95②),
   // 그 외에는 기본세율 + 장기보유특별공제 (비사업용토지는 기본세율에 10%p 가산)
-  // 1세대1주택 비과세 특례는 조정대상지역 취득 주택의 경우 2년 이상 거주해야 인정됨 (소득세법 시행령 §154①)
-  const qualifiesOneHouse = p.assetType === 'house' && p.isOneHouse && (!p.isAdjustedArea || p.liveYears >= 2);
+  // 1세대1주택 비과세 특례의 거주요건은 "취득 당시" 조정대상지역 여부로 판단 (소득세법 시행령 §154①)
+  // 다주택 중과는 "양도 당시" 조정대상지역 여부로 판단 (소득세법 §104⑦)
+  const isAdjustedAtAcquisition = p.isAdjustedAreaAtAcquisition !== undefined ? p.isAdjustedAreaAtAcquisition : p.isAdjustedArea;
+  const isAdjustedNow = p.isAdjustedAreaNow !== undefined ? p.isAdjustedAreaNow : p.isAdjustedArea;
+  const qualifiesOneHouse = p.assetType === 'house' && p.isOneHouse && (!isAdjustedAtAcquisition || p.liveYears >= 2);
   const oneHouseExceptionFailed = p.assetType === 'house' && p.isOneHouse && !qualifiesOneHouse;
-  const isMultiHouseHeavy = p.assetType === 'house' && p.isAdjustedArea && p.houseCount >= 2 && !qualifiesOneHouse;
+  const isMultiHouseHeavy = p.assetType === 'house' && isAdjustedNow && p.houseCount >= 2 && !qualifiesOneHouse;
 
   let deductRate = 0, specialDeduction = 0, taxBase, capitalGainsTax, effectiveRatePct;
-  let surchargeAddRate = null, nonbizExcluded = false, highValuePortion = null;
+  let surchargeAddRate = null, nonbizExcluded = false, highValuePortion = null, fullyExempt = false;
 
   if (isMultiHouseHeavy) {
     // 다주택 중과: 장특공제 배제, 과세표준 = 양도차익 - 기본공제만
@@ -278,11 +281,15 @@ function calcTransferTax(p){
     let baseGain = gain; // 장특공제·과세표준 산정에 쓸 기준 양도차익 (고가주택은 안분된 값으로 대체)
 
     if (qualifiesOneHouse) {
-      // 고가주택(실거래가 12억원 초과): 12억원 초과분에 해당하는 양도차익만 과세 (소득세법 §95③)
       if (p.transferPrice > 1200000000) {
+        // 고가주택(실거래가 12억원 초과): 12억원 초과분에 해당하는 양도차익만 과세 (소득세법 §95③)
         const ratio = (p.transferPrice - 1200000000) / p.transferPrice;
         baseGain = gain * ratio;
         highValuePortion = { ratio, taxableGain: baseGain };
+      } else {
+        // 양도가액 12억원 이하: 1세대1주택 비과세 요건 충족 시 전액 비과세 (소득세법 §89①3호)
+        baseGain = 0;
+        fullyExempt = true;
       }
       const holdRate = Math.min(Math.floor(p.holdYears) * settings.oneHouseHoldRate, settings.oneHouseHoldMax);
       const liveRate = Math.min(Math.floor(p.liveYears) * settings.oneHouseLiveRate, settings.oneHouseLiveMax);
@@ -316,30 +323,34 @@ function calcTransferTax(p){
   if (oneHouseExceptionFailed) {
     rows.push(['1세대1주택 비과세 특례', '미적용 (조정대상지역 취득주택은 2년 이상 거주 필요)']);
   }
-  if (highValuePortion) {
-    rows.push(['12억원 초과분 과세대상 양도차익', won(highValuePortion.taxableGain) + ` (전체의 ${(highValuePortion.ratio*100).toFixed(1)}%)`]);
-  }
-  if (isMultiHouseHeavy) {
-    rows.push(['장기보유특별공제', '배제 (다주택 중과 대상)']);
-  } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
-    rows.push(['장기보유특별공제', '배제 (2028년 개편안 — 비사업용토지)']);
+  if (fullyExempt) {
+    rows.push(['1세대1주택 비과세', '전액 비과세 (양도가액 12억원 이하, 소득세법 §89①3호)']);
   } else {
-    rows.push([`장기보유특별공제 (${(deductRate*100).toFixed(0)}%)`, wonMinus(specialDeduction)]);
-  }
-  if (isExpandedBasicDeduction) {
-    rows.push(['기본공제 (10년+거주 1세대1주택 확대, 개편안)', wonMinus(basicDeduction)]);
-  } else {
-    rows.push(['기본공제', wonMinus(basicDeduction)]);
+    if (highValuePortion) {
+      rows.push(['12억원 초과분 과세대상 양도차익', won(highValuePortion.taxableGain) + ` (전체의 ${(highValuePortion.ratio*100).toFixed(1)}%)`]);
+    }
+    if (isMultiHouseHeavy) {
+      rows.push(['장기보유특별공제', '배제 (다주택 중과 대상)']);
+    } else if (p.assetType === 'nonbiz_land' && settings.nonbizNewRule) {
+      rows.push(['장기보유특별공제', '배제 (2028년 개편안 — 비사업용토지)']);
+    } else {
+      rows.push([`장기보유특별공제 (${(deductRate*100).toFixed(0)}%)`, wonMinus(specialDeduction)]);
+    }
+    if (isExpandedBasicDeduction) {
+      rows.push(['기본공제 (10년+거주 1세대1주택 확대, 개편안)', wonMinus(basicDeduction)]);
+    } else {
+      rows.push(['기본공제', wonMinus(basicDeduction)]);
+    }
+    rows.push(['과세표준', won(taxBase)]);
   }
   rows.push(
-    ['과세표준', won(taxBase)],
-    [`양도소득세 (한계세율 ${effectiveRatePct}%)`, won(capitalGainsTax)],
+    fullyExempt ? ['양도소득세', won(capitalGainsTax)] : [`양도소득세 (한계세율 ${effectiveRatePct}%)`, won(capitalGainsTax)],
     ['지방소득세 (본세의 10%)', won(localIncomeTax)],
   );
 
   return {
     gain, deductRate, specialDeduction, basicDeduction, taxBase,
-    capitalGainsTax, localIncomeTax, total, isMultiHouseHeavy,
+    capitalGainsTax, localIncomeTax, total, isMultiHouseHeavy, fullyExempt,
     surchargeAddRate, nonbizExcluded, isExpandedBasicDeduction,
     qualifiesOneHouse, oneHouseExceptionFailed, highValuePortion,
     rows
@@ -812,7 +823,8 @@ function calcMultiPropertyStrategy(properties, opts){
         liveYears: p.liveYears,
         houseCount,
         isOneHouse: p.type === 'house' && houseCount === 1,
-        isAdjustedArea: p.isAdjustedArea,
+        isAdjustedAreaAtAcquisition: p.isAdjustedAreaAtAcquisition,
+        isAdjustedAreaNow: p.isAdjustedAreaNow,
         reformYear: 2026,
       });
 

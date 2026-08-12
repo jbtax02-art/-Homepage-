@@ -49,6 +49,7 @@ button{font-family:inherit;}
 
 /* ---------- 레이아웃 ---------- */
 .wrap{max-width:920px; margin:0 auto; padding:0 24px;}
+.wrap-wide{max-width:1200px !important;}
 
 /* ---------- 헤더 / 인감 로고 ---------- */
 header.site{
@@ -147,14 +148,13 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
 .radio-row label:has(input:checked){background:var(--brand); border-color:var(--brand); color:#fff;}
 
 /* ---------- 종합 Simulation 전용 — 칸을 넓게 잡은 표 ---------- */
-.asset-table.wide-table{min-width:1180px;}
+.asset-table.wide-table{min-width:1080px;}
 .asset-table.wide-table th, .asset-table.wide-table td{padding:10px 12px;}
-.asset-table.wide-table col.col-type{width:100px;}
+.asset-table.wide-table col.col-type{width:90px;}
 .asset-table.wide-table col.col-name{width:150px;}
-.asset-table.wide-table col.col-money{width:150px;}
-.asset-table.wide-table col.col-expense{width:120px;}
+.asset-table.wide-table col.col-money{width:160px;}
 .asset-table.wide-table col.col-date{width:160px;}
-.asset-table.wide-table col.col-adjusted{width:100px;}
+.asset-table.wide-table col.col-history{width:150px;}
 .asset-table.wide-table col.col-remove{width:56px;}
 .asset-table.wide-table input, .asset-table.wide-table select{font-size:14.5px; padding:10px 12px;}
 .asset-table.wide-table input[type=date]{min-width:130px;}
