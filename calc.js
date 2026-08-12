@@ -626,10 +626,17 @@ function calcHoldingTaxDetailed(state){
   const houseAssets = assets.filter(a => a.type === 'house');
   const isOneHouseHousehold = houseAssets.length === 1;
   const houseCount = houseAssets.length;
+  const houseFmvRatio = isOneHouseHousehold
+    ? (houseAssets[0].publicPrice <= 300000000 ? 0.43 : houseAssets[0].publicPrice <= 600000000 ? 0.44 : 0.45)
+    : 0.60;
+  const houseCreditBrackets = isOneHouseHousehold ? PROPERTY_TAX_ONEHOUSE : PROPERTY_TAX_STANDARD;
 
-  const ownerTotals = {}; // key: 소유자명 -> { name, propertyTax, compTax, houseShareSum }
+  const ownerTotals = {}; // key: 소유자명 -> { name, propertyTax, compTax, houseShareSum, housePropertyTaxRaw, residencePublicPrice }
   function getOwner(name){
-    if (!ownerTotals[name]) ownerTotals[name] = { name, propertyTax: 0, compTax: 0, houseShareSum: 0 };
+    if (!ownerTotals[name]) ownerTotals[name] = {
+      name, propertyTax: 0, compTax: 0, houseShareSum: 0,
+      housePropertyTaxRaw: 0, residencePublicPrice: 0,
+    };
     return ownerTotals[name];
   }
 
@@ -642,13 +649,10 @@ function calcHoldingTaxDetailed(state){
       .map((o, idx) => ({ ...o, name: (o.name && o.name.trim()) || `소유자${idx + 1}` }));
     const shareTotal = owners.reduce((s,o)=>s+o.sharePct,0) || 100;
 
-    let wholeBase, wholeBrackets, wholeTaxLabel;
+    let wholeBase, wholeBrackets;
     if (asset.type === 'house') {
-      const fmvRatio = isOneHouseHousehold
-        ? (asset.publicPrice <= 300000000 ? 0.43 : asset.publicPrice <= 600000000 ? 0.44 : 0.45)
-        : 0.60;
-      wholeBase = asset.publicPrice * fmvRatio;
-      wholeBrackets = isOneHouseHousehold ? PROPERTY_TAX_ONEHOUSE : PROPERTY_TAX_STANDARD;
+      wholeBase = asset.publicPrice * houseFmvRatio;
+      wholeBrackets = houseCreditBrackets;
     } else {
       // 토지·건물: 공정시장가액비율 70% (지방세법 시행령 §109), 세율은 간이 근사치(0.3%) — 종합/별도합산·분리과세 구분 미반영
       wholeBase = asset.publicPrice * 0.70;
@@ -665,8 +669,12 @@ function calcHoldingTaxDetailed(state){
       const amount = wholePropertyTotal * (pct / 100);
       const owner = getOwner(o.name);
       owner.propertyTax += amount;
-      if (asset.type === 'house') owner.houseShareSum += asset.publicPrice * (pct / 100);
-      return { name: o.name, relation: o.relation, pct, amount };
+      if (asset.type === 'house') {
+        owner.houseShareSum += asset.publicPrice * (pct / 100);
+        owner.housePropertyTaxRaw += wholePropertyTaxRaw * (pct / 100);
+        if (o.resides) owner.residencePublicPrice = asset.publicPrice; // 거주주택으로 지정한 자산의 공시가격
+      }
+      return { name: o.name, relation: o.relation, pct, amount, resides: !!o.resides };
     });
 
     assetRows.push({
@@ -678,9 +686,6 @@ function calcHoldingTaxDetailed(state){
   // 종부세: 주택만, 인별 지분 합산
   // 2026년 세제개편안(발표안, 미확정) 반영: 기본공제·공정시장가액비율·세율표가 '27년, '28년부터 각각 달라짐
   const reformYear = state.reformYear || 2026;
-  const deduction = isOneHouseHousehold
-    ? (reformYear >= 2027 ? (state.isResident ? 1400000000 : 900000000) : 1200000000)
-    : 900000000; // '기타' 공제 확대식(4억+5억×비중)은 세부 산정요건 복잡해 미반영, 현행 9억으로 근사
   const ctFmvRatio = reformYear < 2027
     ? 0.60
     : (houseCount >= 3 ? (reformYear === 2027 ? 0.70 : 0.80) : 0.70); // 3주택+조정지역자 80%(28년~)는 조정지역 여부 미반영, 3주택 이상이면 적용으로 근사
@@ -689,10 +694,38 @@ function calcHoldingTaxDetailed(state){
     : (reformYear === 2027 ? (houseCount >= 3 ? COMP_TAX_2027_OVER3 : COMP_TAX_2027_UNDER2) : COMP_TAX_2027_OVER3);
 
   let grandCompTax = 0;
+  let grandPropertyTaxCredit = 0;
   Object.values(ownerTotals).forEach(owner => {
     if (owner.houseShareSum <= 0) return;
+
+    // 기본공제: 1세대1주택은 거주14억/비거주9억('27년~), 다주택('기타')은 '27년 개편안부터
+    // "4억원+(5억원×주택공시가격합계/거주주택공시가격)" 산식 적용 — 거주주택을 지정한 경우만 계산 가능
+    let deduction;
+    if (isOneHouseHousehold) {
+      deduction = reformYear >= 2027 ? (state.isResident ? 1400000000 : 900000000) : 1200000000;
+    } else if (reformYear >= 2027 && owner.residencePublicPrice > 0) {
+      deduction = 400000000 + 500000000 * (owner.houseShareSum / owner.residencePublicPrice);
+    } else {
+      deduction = 900000000; // 거주주택 미지정 시(또는 현행법) 근사치로 9억 적용
+    }
+    owner.deductionApplied = deduction;
+
     const ctBase = clamp0(owner.houseShareSum - deduction) * ctFmvRatio;
-    const compTaxRaw = progressiveTax(ctBase, ctBrackets);
+    let compTaxRaw = progressiveTax(ctBase, ctBrackets);
+
+    // 재산세액공제: 종부세 과세표준에 이미 부과된 재산세만큼 이중과세 조정 (종부세법 §9③, 시행령 §4의2)
+    // 공제액 = 실제재산세 × [진세(종부세과표×재산세공정시장가액비율)] / [진세(개인총보유공시가격×재산세공정시장가액비율)]
+    let propertyTaxCredit = 0;
+    if (compTaxRaw > 0 && owner.housePropertyTaxRaw > 0) {
+      const numerator = progressiveTax(ctBase * houseFmvRatio, houseCreditBrackets);
+      const denominator = progressiveTax(owner.houseShareSum * houseFmvRatio, houseCreditBrackets);
+      const creditRatio = denominator > 0 ? Math.min(numerator / denominator, 1) : 0;
+      propertyTaxCredit = owner.housePropertyTaxRaw * creditRatio;
+      compTaxRaw = clamp0(compTaxRaw - propertyTaxCredit);
+    }
+    owner.propertyTaxCredit = propertyTaxCredit;
+    grandPropertyTaxCredit += propertyTaxCredit;
+
     const ruralTax = compTaxRaw * 0.2;
     owner.compTax = compTaxRaw + ruralTax;
     grandCompTax += owner.compTax;
@@ -703,9 +736,14 @@ function calcHoldingTaxDetailed(state){
     ...o, total: o.propertyTax + o.compTax
   }));
 
+  // 대표 공제금액: 1세대1주택은 전원 동일값, 다주택('기타')은 거주주택 지정 여부에 따라 인별로 달라질 수 있어 null
+  const deduction = isOneHouseHousehold
+    ? (reformYear >= 2027 ? (state.isResident ? 1400000000 : 900000000) : 1200000000)
+    : null;
+
   return {
-    isOneHouseHousehold, houseCount, deduction, reformYear, ctFmvRatio, assetRows, ownerList,
-    grandPropertyTax, grandCompTax, grandTotal,
+    isOneHouseHousehold, houseCount, deduction, reformYear, ctFmvRatio, houseFmvRatio,
+    assetRows, ownerList, grandPropertyTax, grandCompTax, grandPropertyTaxCredit, grandTotal,
   };
 }
 
@@ -719,14 +757,19 @@ function compareHoldingReform(state, baseResult, compareYears){
     const pct = baseResult.grandTotal !== 0 ? (diff / baseResult.grandTotal * 100) : 0;
     const reasons = [];
 
-    if (baseResult.deduction !== cmp.deduction) {
+    if (baseResult.deduction !== null && cmp.deduction !== null && baseResult.deduction !== cmp.deduction) {
       reasons.push(`종부세 기본공제가 ${won(baseResult.deduction)} → ${won(cmp.deduction)}로 변경됨`);
+    } else if (!baseResult.isOneHouseHousehold && year >= 2027) {
+      reasons.push('다주택자 기본공제가 "4억원+(5억원×보유주택합계/거주주택 공시가격)" 산식으로 바뀌어, 거주주택으로 지정한 소유자는 공제금액이 인별로 달라질 수 있음');
     }
     if (baseResult.ctFmvRatio !== cmp.ctFmvRatio) {
       reasons.push(`종부세 공정시장가액비율이 ${(baseResult.ctFmvRatio*100).toFixed(0)}% → ${(cmp.ctFmvRatio*100).toFixed(0)}%로 상향됨`);
     }
     if (year >= 2028 && baseResult.houseCount < 3) {
       reasons.push('2028년부터 종부세 세율표에서 주택수 구분이 폐지되어 세율 구조가 달라짐');
+    }
+    if (Math.round(baseResult.grandPropertyTaxCredit) !== Math.round(cmp.grandPropertyTaxCredit)) {
+      reasons.push(`재산세액공제(이중과세 조정) 금액이 ${won(baseResult.grandPropertyTaxCredit)} → ${won(cmp.grandPropertyTaxCredit)}로 변경됨`);
     }
     if (reasons.length === 0) {
       reasons.push('입력하신 조건에서는 해당 연도 개편안이 적용되는 항목이 없어 현행과 동일합니다.');
@@ -749,48 +792,51 @@ function calcMultiPropertyStrategy(properties, opts){
   const houseCount = properties.filter(p => p.type === 'house').length;
   const toAsset = p => ({
     type: p.type, desc: p.name, publicPrice: p.publicPrice,
-    owners: [{ name: '세대', relation: '본인', sharePct: 100 }],
+    owners: [{ name: '세대', relation: '본인', sharePct: 100, resides: !!p.resides }],
   });
   const transferAssetType = p => p.type === 'house' ? 'house' : (p.type === 'land' ? 'nonbiz_land' : 'other_asset');
 
   const beforeState = { isUrbanArea: opts.isUrbanArea, isResident: opts.isResident, reformYear: 2026, assets: properties.map(toAsset) };
   const beforeHolding = calcHoldingTaxDetailed(beforeState);
 
-  const scenarios = properties.map((p, idx) => {
-    const transferResult = calcTransferTax({
-      assetType: transferAssetType(p),
-      transferPrice: p.transferPrice,
-      acquisitionPrice: p.acquisitionPrice,
-      necessaryExpense: p.necessaryExpense,
-      holdYears: p.holdYears,
-      liveYears: p.liveYears,
-      houseCount,
-      isOneHouse: p.type === 'house' && houseCount === 1,
-      isAdjustedArea: p.isAdjustedArea,
-      reformYear: 2026,
-    });
+  const scenarios = properties
+    .map((p, idx) => ({ p, idx }))
+    .filter(({ p }) => !p.excludeFromSale)
+    .map(({ p, idx }) => {
+      const transferResult = calcTransferTax({
+        assetType: transferAssetType(p),
+        transferPrice: p.transferPrice,
+        acquisitionPrice: p.acquisitionPrice,
+        necessaryExpense: p.necessaryExpense,
+        holdYears: p.holdYears,
+        liveYears: p.liveYears,
+        houseCount,
+        isOneHouse: p.type === 'house' && houseCount === 1,
+        isAdjustedArea: p.isAdjustedArea,
+        reformYear: 2026,
+      });
 
-    const remaining = properties.filter((_, i) => i !== idx);
-    let remainingHolding;
-    if (remaining.length === 0) {
-      remainingHolding = { grandTotal: 0, grandPropertyTax: 0, grandCompTax: 0 };
-    } else {
-      const afterState = { isUrbanArea: opts.isUrbanArea, isResident: opts.isResident, reformYear: 2026, assets: remaining.map(toAsset) };
-      remainingHolding = calcHoldingTaxDetailed(afterState);
-    }
+      const remaining = properties.filter((_, i) => i !== idx);
+      let remainingHolding;
+      if (remaining.length === 0) {
+        remainingHolding = { grandTotal: 0, grandPropertyTax: 0, grandCompTax: 0 };
+      } else {
+        const afterState = { isUrbanArea: opts.isUrbanArea, isResident: opts.isResident, reformYear: 2026, assets: remaining.map(toAsset) };
+        remainingHolding = calcHoldingTaxDetailed(afterState);
+      }
 
-    const combinedFirstYear = transferResult.total + remainingHolding.grandTotal;
+      const combinedFirstYear = transferResult.total + remainingHolding.grandTotal;
 
-    return {
-      name: p.name,
-      type: p.type,
-      transferTotal: transferResult.total,
-      transferRows: transferResult.rows,
-      remainingHoldingTotal: remainingHolding.grandTotal,
-      remainingCount: remaining.length,
-      combinedFirstYear,
-    };
-  }).sort((a, b) => a.combinedFirstYear - b.combinedFirstYear);
+      return {
+        name: p.name,
+        type: p.type,
+        transferTotal: transferResult.total,
+        transferRows: transferResult.rows,
+        remainingHoldingTotal: remainingHolding.grandTotal,
+        remainingCount: remaining.length,
+        combinedFirstYear,
+      };
+    }).sort((a, b) => a.combinedFirstYear - b.combinedFirstYear);
 
   return { houseCount, beforeHolding, scenarios };
 }

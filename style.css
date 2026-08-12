@@ -87,7 +87,7 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
 }
 .hero h1{font-size:clamp(26px,4.4vw,38px); line-height:1.35; color:var(--brand-deep);}
 .hero h1 em{color:var(--brand); font-style:normal;}
-.hero p{margin-top:14px; color:var(--muted); font-size:15px; line-height:1.75; max-width:72ch;}
+.hero p{margin-top:14px; color:var(--muted); font-size:15px; line-height:1.75;}
 
 /* ---------- 계산기 패널 ---------- */
 .calc-panel{
@@ -145,6 +145,21 @@ nav.tabs a.active{color:var(--brand); border-bottom-color:var(--brand); font-wei
 .row-remove-btn:hover{color:#fff; background:#A23B2E; border-color:#A23B2E;}
 .radio-row input{display:none;}
 .radio-row label:has(input:checked){background:var(--brand); border-color:var(--brand); color:#fff;}
+
+/* ---------- 종합 Simulation 전용 — 칸을 넓게 잡은 표 ---------- */
+.asset-table.wide-table{min-width:1180px;}
+.asset-table.wide-table th, .asset-table.wide-table td{padding:10px 12px;}
+.asset-table.wide-table col.col-type{width:100px;}
+.asset-table.wide-table col.col-name{width:150px;}
+.asset-table.wide-table col.col-money{width:150px;}
+.asset-table.wide-table col.col-expense{width:120px;}
+.asset-table.wide-table col.col-date{width:160px;}
+.asset-table.wide-table col.col-adjusted{width:100px;}
+.asset-table.wide-table col.col-remove{width:56px;}
+.asset-table.wide-table input, .asset-table.wide-table select{font-size:14.5px; padding:10px 12px;}
+.asset-table.wide-table input[type=date]{min-width:130px;}
+.nosale-toggle{display:flex; align-items:center; gap:6px; margin-top:6px; font-size:12px; color:var(--muted); white-space:nowrap;}
+.nosale-toggle input{width:auto; margin:0;}
 
 .calc-btn{
   margin-top:22px; width:100%; padding:15px; border:none; border-radius:var(--radius);

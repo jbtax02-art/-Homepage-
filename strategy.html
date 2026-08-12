@@ -57,25 +57,30 @@
     </div>
 
     <div class="asset-table-wrap">
-      <table class="asset-table">
+      <table class="asset-table wide-table">
+        <colgroup>
+          <col class="col-type"><col class="col-name"><col class="col-money"><col class="col-money">
+          <col class="col-expense"><col class="col-date"><col class="col-date"><col class="col-date">
+          <col class="col-adjusted"><col class="col-money"><col class="col-remove">
+        </colgroup>
         <thead>
           <tr>
-            <th style="width:8%">물건종류</th>
-            <th style="width:10%">부동산명</th>
-            <th style="width:9%">취득가액</th>
-            <th style="width:9%">예상 양도가액</th>
-            <th style="width:8%">필요경비</th>
-            <th style="width:9%">취득일자</th>
-            <th style="width:9%">예상 양도일자</th>
-            <th style="width:9%">거주시작일자</th>
-            <th style="width:8%">조정지역</th>
-            <th style="width:9%">기준시가(보유세용)</th>
-            <th style="width:4%"></th>
+            <th>물건종류</th>
+            <th>부동산명</th>
+            <th>취득가액</th>
+            <th>예상 양도가액</th>
+            <th>필요경비</th>
+            <th>취득일자</th>
+            <th>예상 양도일자</th>
+            <th>거주시작일자</th>
+            <th>조정지역</th>
+            <th>기준시가(보유세용)</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="strategy-rows-body"></tbody>
       </table>
-      <p class="hint" style="margin:8px 10px 4px;">거주시작일자는 1세대1주택 특례를 검토할 주택에만 입력하세요(비워두면 미거주로 계산, 예상 양도일자까지 계속 거주하는 것으로 가정합니다).</p>
+      <p class="hint" style="margin:8px 10px 4px;">거주시작일자는 1세대1주택 특례를 검토할 주택에만 입력하세요(비워두면 미거주로 계산, 예상 양도일자까지 계속 거주하는 것으로 가정합니다). 계속 보유할 부동산은 "예상 양도일자" 칸의 "양도 안 함"에 체크하면 매도 후보에서 빠지고, 다른 부동산을 팔았을 때 남는 보유세 계산에만 반영됩니다.</p>
     </div>
     <div class="field-grid" style="margin:6px 0 20px;">
       <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
@@ -152,7 +157,10 @@ function strategyRowHtml(idx){
     <td><input type="text" inputmode="numeric" class="s-transfer" placeholder="예: 1,200,000,000"></td>
     <td><input type="text" inputmode="numeric" class="s-expense" placeholder="0" value="0"></td>
     <td><input type="date" class="s-acqdate"></td>
-    <td><input type="date" class="s-trdate" value="${todayStr}"></td>
+    <td>
+      <input type="date" class="s-trdate" value="${todayStr}">
+      <label class="nosale-toggle"><input type="checkbox" class="s-nosale"><span>양도 안 함</span></label>
+    </td>
     <td><input type="date" class="s-livestart"></td>
     <td>
       <select class="s-adjusted">
@@ -179,6 +187,11 @@ function addStrategyRow(){
   rowEl.querySelector('.s-transfer').addEventListener('input', function(e){ attachThousands(e.target); });
   rowEl.querySelector('.s-expense').addEventListener('input', function(e){ attachThousands(e.target); });
   rowEl.querySelector('.s-public').addEventListener('input', function(e){ attachThousands(e.target); });
+  rowEl.querySelector('.s-nosale').addEventListener('change', function(e){
+    const trDateEl = rowEl.querySelector('.s-trdate');
+    trDateEl.disabled = e.target.checked;
+    trDateEl.style.opacity = e.target.checked ? '0.4' : '1';
+  });
 }
 
 document.getElementById('strategy-add-row-btn').addEventListener('click', () => addStrategyRow());
@@ -192,22 +205,31 @@ document.getElementById('form-strategy').addEventListener('submit', function(e){
   const isUrbanArea = document.querySelector('input[name=s-isUrbanArea]:checked').value === '1';
   const isResident = document.querySelector('input[name=s-isResident]:checked').value === '1';
 
-  const properties = Array.from(strategyRowsBodyEl.querySelectorAll('.strategy-row-line')).map((rowEl, idx) => ({
-    type: rowEl.querySelector('.s-type').value,
-    name: rowEl.querySelector('.s-name').value.trim() || `부동산${idx+1}`,
-    acquisitionPrice: rawNumber(rowEl.querySelector('.s-acq')),
-    transferPrice: rawNumber(rowEl.querySelector('.s-transfer')),
-    necessaryExpense: rawNumber(rowEl.querySelector('.s-expense')),
-    holdYears: yearsBetween(rowEl.querySelector('.s-acqdate').value, rowEl.querySelector('.s-trdate').value),
-    liveYears: rowEl.querySelector('.s-livestart').value
-      ? yearsBetween(rowEl.querySelector('.s-livestart').value, rowEl.querySelector('.s-trdate').value)
-      : 0,
-    isAdjustedArea: rowEl.querySelector('.s-adjusted').value === '1',
-    publicPrice: rawNumber(rowEl.querySelector('.s-public')),
-  })).filter(p => p.transferPrice > 0 && p.publicPrice > 0);
+  const properties = Array.from(strategyRowsBodyEl.querySelectorAll('.strategy-row-line')).map((rowEl, idx) => {
+    const excludeFromSale = rowEl.querySelector('.s-nosale').checked;
+    return {
+      type: rowEl.querySelector('.s-type').value,
+      name: rowEl.querySelector('.s-name').value.trim() || `부동산${idx+1}`,
+      acquisitionPrice: rawNumber(rowEl.querySelector('.s-acq')),
+      transferPrice: rawNumber(rowEl.querySelector('.s-transfer')),
+      necessaryExpense: rawNumber(rowEl.querySelector('.s-expense')),
+      holdYears: yearsBetween(rowEl.querySelector('.s-acqdate').value, rowEl.querySelector('.s-trdate').value),
+      liveYears: rowEl.querySelector('.s-livestart').value
+        ? yearsBetween(rowEl.querySelector('.s-livestart').value, rowEl.querySelector('.s-trdate').value)
+        : 0,
+      isAdjustedArea: rowEl.querySelector('.s-adjusted').value === '1',
+      publicPrice: rawNumber(rowEl.querySelector('.s-public')),
+      excludeFromSale,
+      resides: !!rowEl.querySelector('.s-livestart').value, // 거주시작일자 입력 시 보유세 거주주택 판정에도 사용
+    };
+  }).filter(p => p.publicPrice > 0 && (p.excludeFromSale || p.transferPrice > 0));
 
   if (properties.length < 2) {
-    alert('비교하려면 부동산을 2건 이상 입력해주세요 (예상 양도가액·기준시가 모두 입력 필요).');
+    alert('비교하려면 부동산을 2건 이상 입력해주세요 (기준시가는 필수, 매도 후보는 예상 양도가액도 필요).');
+    return;
+  }
+  if (properties.every(p => p.excludeFromSale)) {
+    alert('"양도 안 함"이 아닌 매도 후보가 최소 1건은 있어야 비교할 수 있습니다.');
     return;
   }
 

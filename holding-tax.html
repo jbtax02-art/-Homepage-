@@ -60,12 +60,13 @@
       <table class="asset-table">
         <thead>
           <tr>
-            <th style="width:13%">물건종류</th>
-            <th style="width:23%">상세주소</th>
-            <th style="width:20%">기준시가(원)</th>
-            <th style="width:13%">소유자</th>
-            <th style="width:13%">관계</th>
-            <th style="width:11%">지분율(%)</th>
+            <th style="width:12%">물건종류</th>
+            <th style="width:20%">상세주소</th>
+            <th style="width:18%">기준시가(원)</th>
+            <th style="width:12%">소유자</th>
+            <th style="width:12%">관계</th>
+            <th style="width:10%">지분율(%)</th>
+            <th style="width:9%">거주중</th>
             <th style="width:7%"></th>
           </tr>
         </thead>
@@ -76,7 +77,7 @@
       <span class="hint"><a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">기준시가(공시가격) 조회하기 ↗</a><br><a href="https://www.wetax.go.kr/tcp/loi/J030401M01.do" target="_blank" rel="noopener">시가표준액 조회하기 ↗</a></span>
     </div>
     <button type="button" class="calc-btn" id="add-row-btn" style="background:var(--panel-deep); color:var(--brand-deep); margin-bottom:20px;">+ 행 추가</button>
-    <p class="hint" style="margin:-14px 0 20px;">같은 물건을 여러 명이 공동소유한 경우, 물건종류·상세주소·기준시가가 같은 행을 여러 줄로 나눠 소유자별로 입력하세요.</p>
+    <p class="hint" style="margin:-14px 0 20px;">같은 물건을 여러 명이 공동소유한 경우, 물건종류·상세주소·기준시가가 같은 행을 여러 줄로 나눠 소유자별로 입력하세요. "거주중"은 다주택자가 2027년 개편안 기본공제 산식("4억원+5억원×보유주택합계/거주주택 공시가격")을 적용받을 때, 그 소유자가 실제 거주하는 주택에 체크하세요(1세대1주택은 위 "실제 거주 중인가요?" 항목을 사용).</p>
 
     <button type="submit" class="calc-btn">보유세 계산하기</button>
   </form>
@@ -99,7 +100,7 @@
     </div>
     <div id="h-reform-compare"></div>
     <p class="cite"><b>근거</b><br>지방세법 §111(재산세 세율), 지방세법 시행령(공정시장가액비율), 종합부동산세법 §8(공제금액)·§9(세율)</p>
-    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
+    <p class="disclaimer"><b>안내</b><br>간이 계산 결과입니다. 토지·건물은 종합합산·별도합산·분리과세 구분 없이 근사치(0.3%)로 계산되며, 토지·건물의 종합부동산세는 반영되어 있지 않습니다. 종부세 재산세액공제(이중과세 조정)와 다주택자 거주주택 기본공제(2027년 개편안)는 반영했으나, 거주주택을 지정하지 않으면 기본공제는 현행 9억원으로 근사 처리됩니다. 세부담 상한, 부부공동명의 1주택 특례 신청 여부 등은 별도 확인이 필요합니다.</p>
     <div class="print-legal">
       <b>법적 고지</b><br>본 계산기는 참고용 도구로, 산출 결과는 법적 효력이나 세무·법률적 구속력을 가지지 않습니다. 법령 개정이나 개별 사실관계(특례·감면·세부담 상한 등)에 따라 실제 세액과 차이가 날 수 있으며, 세무회계 아진은 본 계산기 이용으로 발생하는 손해에 대해 책임을 지지 않습니다. 중요한 의사결정 전에는 반드시 세무사와 상담해 정확한 세액을 확인하시기 바랍니다.
     </div>
@@ -116,6 +117,7 @@
     <h2>보유세, 이렇게 계산됩니다</h2>
     <p>재산세는 물건(자산) 단위로 과세됩니다. 세대 전체가 보유한 주택이 1건뿐이면 1세대1주택 특례세율(0.05~0.35%)이 적용되고, 2건 이상이면 표준세율(0.1~0.4%)이 적용됩니다(<span class="law-ref">지방세법 §111</span>). 공동명의인 경우 물건 전체 기준으로 세액을 산출한 뒤 지분율대로 나눠 각자에게 고지됩니다.</p>
     <p>종합부동산세는 오직 주택에만 적용되며, 각 소유자가 보유한 모든 주택의 지분을 인별로 합산해 기본공제(1세대1주택 12억원, 그 외 9억원)를 뺀 뒤 세율을 적용합니다(<span class="law-ref">종부세법 §8·§9</span>).</p>
+    <p>이미 낸 재산세와 종부세가 같은 부동산 가치를 이중으로 과세하지 않도록, 종부세 산출세액에서 그 부분에 해당하는 재산세액을 공제합니다(<span class="law-ref">종부세법 §9③</span>, 재산세액공제). 2027년 개편안부터는 다주택자('기타') 기본공제도 "4억원+(5억원×보유주택 공시가격합계/거주주택 공시가격)" 산식으로 바뀌는데, 이때 어느 집에 실제 거주하는지에 따라 공제금액이 달라지므로 표에서 "거주중"에 체크해야 정확히 계산됩니다.</p>
   </section>
 
   <div class="related">
@@ -160,6 +162,7 @@ function rowHtml(defaultType, defaultRelation){
     <td><input type="text" class="row-owner" placeholder="성명"></td>
     <td><select class="row-relation">${relationOptionsHtml(defaultRelation)}</select></td>
     <td><input type="number" class="row-pct" value="100" min="0" max="100"></td>
+    <td style="text-align:center;"><input type="checkbox" class="row-resides" style="width:18px; height:18px;"></td>
     <td><button type="button" class="row-remove-btn" title="행 삭제">&times;</button></td>
   </tr>`;
 }
@@ -192,11 +195,12 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
     const ownerName = rowEl.querySelector('.row-owner').value.trim() || `소유자${idx + 1}`;
     const relation = rowEl.querySelector('.row-relation').value;
     const sharePct = Number(rowEl.querySelector('.row-pct').value || 0);
+    const resides = rowEl.querySelector('.row-resides').checked;
     if (publicPrice <= 0) return;
 
     const key = `${type}|${desc}|${publicPrice}`;
     if (!groups.has(key)) groups.set(key, { type, desc, publicPrice, owners: [] });
-    groups.get(key).owners.push({ name: ownerName, relation, sharePct });
+    groups.get(key).owners.push({ name: ownerName, relation, sharePct, resides });
   });
   const assets = Array.from(groups.values());
 
@@ -226,6 +230,8 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
     r.ownerList.map(o => `
       <div class="breakdown" style="margin-top:6px;">
         <div class="row"><span class="k">${o.name} 재산세</span><span class="v">${won(o.propertyTax)}</span></div>
+        ${o.houseShareSum > 0 ? `<div class="row"><span class="k">　└ 적용 종부세 기본공제</span><span class="v" style="font-weight:400;">${won(o.deductionApplied || 0)}</span></div>` : ''}
+        ${o.propertyTaxCredit > 0 ? `<div class="row"><span class="k">　└ 재산세액공제(이중과세 조정)</span><span class="v" style="font-weight:400;">${wonMinus(o.propertyTaxCredit)}</span></div>` : ''}
         <div class="row"><span class="k">${o.name} 종합부동산세</span><span class="v">${won(o.compTax)}</span></div>
         <div class="row total"><span class="k">${o.name} 합계</span><span class="v">${won(o.total)}</span></div>
       </div>`
@@ -233,7 +239,7 @@ document.getElementById('form-holding').addEventListener('submit', function(e){
 
   document.getElementById('h-onehouse-note').textContent = r.isOneHouseHousehold
     ? `1세대1주택 특례 적용 대상입니다 (세대 전체 보유주택 ${r.houseCount}건, 종부세 기본공제 ${won(r.deduction)} 적용, 현행법 2026 기준)`
-    : `세대 전체 보유주택이 ${r.houseCount}건이라 1세대1주택 특례가 적용되지 않습니다 (종부세 기본공제 ${won(r.deduction)} 적용, 현행법 2026 기준)`;
+    : `세대 전체 보유주택이 ${r.houseCount}건이라 1세대1주택 특례가 적용되지 않습니다 (다주택자 기본공제는 거주주택 지정 여부에 따라 소유자별로 다를 수 있어 위 소유자별 합계에서 확인하세요, 현행법 2026 기준)`;
 
   lastHoldingState = state;
   lastHoldingResult = r;
